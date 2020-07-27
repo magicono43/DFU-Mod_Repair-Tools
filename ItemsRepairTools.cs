@@ -43,7 +43,7 @@ namespace RepairTools
 
             if (ItemID >= 800 && ItemID <= 804)
             {
-                // Got a very nice debug save now, but now have to figure out the problems with some of the item lists being populated by the wrong stuff. 80% max for now Do the functions for limiting how much can be repaired, then after that the ACTUAL repairing of said picked item, etc. Oh yeah, also make sure that shields can be repaired by the armorers hammer as well, at least if it's plate, it probably already does, but make sure with testing. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest, with that, may also drain some stamina upon repairing an items (increasing amount based on the sort of repair done.) Ebony, Orcish, Daedric.
+                // 80% max for now Do the functions for limiting how much can be repaired, then after that the ACTUAL repairing of said picked item, etc. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest, with that, may also drain some stamina upon repairing an items (increasing amount based on the sort of repair done.) Ebony, Orcish, Daedric.
                 DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
                 int itemCount = playerEntity.Items.Count;
                 //validItemPicker.OnItemPicked += RepairItem_OnItemPicked;
@@ -155,7 +155,7 @@ namespace RepairTools
         }
     }
 
-    //Apple
+    //Whetstone
     public class ItemWhetstone : AbstractItemRepairTools
     {
         public const int templateIndex = 800;
@@ -177,7 +177,7 @@ namespace RepairTools
         }
     }
 
-    //Orange
+    //Sewing Kit
     public class ItemSewingKit : AbstractItemRepairTools
     {
         public const int templateIndex = 801;
@@ -199,7 +199,7 @@ namespace RepairTools
         }
     }
 
-    //Bread
+    //ItemArmorers Hammer
     public class ItemArmorersHammer : AbstractItemRepairTools
     {
         public const int templateIndex = 802;
@@ -221,7 +221,7 @@ namespace RepairTools
         }
     }
 
-    //Fish
+    //Jewelers Pliers
     public class ItemJewelersPliers : AbstractItemRepairTools
     {
         public const int templateIndex = 803;
@@ -243,7 +243,7 @@ namespace RepairTools
         }
     }
 
-    //Salted Fish
+    //Epoxy Glue
     public class ItemEpoxyGlue : AbstractItemRepairTools
     {
         public const int templateIndex = 804;
