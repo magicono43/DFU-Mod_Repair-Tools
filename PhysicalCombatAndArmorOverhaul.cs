@@ -3,8 +3,8 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    3/17/2020, 6:30 PM
-// Last Edit:		4/3/2020, 10:40 PM
-// Version:			1.10
+// Last Edit:		7/19/2020, 9:45 PM
+// Version:			1.15
 // Special Thanks:  Hazelnut and Ralzar
 // Modifier:		
 
@@ -23,6 +23,7 @@ using DaggerfallWorkshop.Game.MagicAndEffects;
 using DaggerfallWorkshop.Game.MagicAndEffects.MagicEffects;
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace PhysicalCombatAndArmorOverhaul
 {
@@ -30,9 +31,41 @@ namespace PhysicalCombatAndArmorOverhaul
     {
         static Mod mod;
 		public static bool archeryModuleCheck { get; set; }
-		public static bool critStrikeModuleCheck { get; set; }
+        public static bool critStrikeModuleCheck { get; set; }
+        public static bool fadingEnchantedItemsModuleCheck { get; set; }
 		public static bool armorHitFormulaModuleCheck { get; set; }
-		public static bool shieldBlockSuccess { get; set; }
+        public static bool condBasedEffectModuleCheck { get; set; }
+        public static bool shieldBlockSuccess { get; set; }
+
+        /////////////////////////////////////////////////////////////////////
+        public static GameObject ExampleGo;
+        public static Mod myMod;
+        public static AudioSource audioSource;
+
+        //public const string audioClips = "Zero Gravity 1.ogg";
+
+        //list of audio clip assets bundled in mod
+        public static readonly List<string> audioClips = new List<string>()
+        {
+            "Blade Sharpen WhetStone 1.mp3",
+            "Sewing Kit Repair 1.mp3",
+            "Armorers Hammer Repair 1.mp3",
+            "Jewelers Pliers Repair 1.mp3",
+            "Epoxy Glue Repair 1.mp3"
+        };
+
+        void Start()
+        {
+            //get reference to mod object.  
+            myMod = mod;
+
+            //Can also get this using ModManager, using modtitle or index
+            // myMod = ModManager.Instance.GetMod(modtitle);
+
+            if (audioSource == null)
+                audioSource = this.GetComponent<AudioSource>();
+        }
+        /////////////////////////////////////////////////////////////////////
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -49,16 +82,30 @@ namespace PhysicalCombatAndArmorOverhaul
             itemHelper.RegisterCustomItem(ItemJewelersPliers.templateIndex, ItemGroups.UselessItems2, typeof(ItemJewelersPliers));
             itemHelper.RegisterCustomItem(ItemEpoxyGlue.templateIndex, ItemGroups.UselessItems2, typeof(ItemEpoxyGlue));
         }
+			/////////////////////////////////////////////////////////////////////
+        [Invoke(StateManager.StateTypes.Game)]
+        public static void InitAtGameState(InitParams initParams)
+        {
+            if (ExampleGo != null)
+                return;
+            //Get a clone of the example gameobject prefab from mod
+            ExampleGo = mod.GetAsset<GameObject>("Example.prefab", true);
 
+            //add the audio player script to it
+            ExampleGo.AddComponent<PhysicalCombatAndArmorOverhaul>();
+        }
+            /////////////////////////////////////////////////////////////////////
         void Awake()
         {	
             ModSettings settings = mod.GetSettings();
             Mod roleplayRealism = ModManager.Instance.GetMod("RoleplayRealism");
             Mod meanerMonsters = ModManager.Instance.GetMod("Meaner Monsters");
             bool equipmentDamageEnhanced = settings.GetBool("Modules", "equipmentDamageEnhanced");
-			bool fixedStrengthDamageModifier = settings.GetBool("Modules", "fixedStrengthDamageModifier");
+            bool fadingEnchantedItems = settings.GetBool("Modules", "fadingEnchantedItems");
+            bool fixedStrengthDamageModifier = settings.GetBool("Modules", "fixedStrengthDamageModifier");
 			bool armorHitFormulaRedone = settings.GetBool("Modules", "armorHitFormulaRedone");
 			bool criticalStrikesIncreaseDamage = settings.GetBool("Modules", "criticalStrikesIncreaseDamage");
+            bool conditionBasedEffectiveness = settings.GetBool("Modules", "conditionBasedEffectiveness");
             bool rolePlayRealismArcheryModule = false;
             bool ralzarMeanerMonstersEdit = false;
             if (roleplayRealism != null)
@@ -71,14 +118,14 @@ namespace PhysicalCombatAndArmorOverhaul
                 ralzarMeanerMonstersEdit = true;
             }
 
-            InitMod(equipmentDamageEnhanced, fixedStrengthDamageModifier, armorHitFormulaRedone, criticalStrikesIncreaseDamage, rolePlayRealismArcheryModule, ralzarMeanerMonstersEdit);
+            InitMod(equipmentDamageEnhanced, fadingEnchantedItems, fixedStrengthDamageModifier, armorHitFormulaRedone, conditionBasedEffectiveness, criticalStrikesIncreaseDamage, rolePlayRealismArcheryModule, ralzarMeanerMonstersEdit);
 
             mod.IsReady = true;
         }
 		
 		#region InitMod and Settings
 		
-		private static void InitMod(bool equipmentDamageEnhanced, bool fixedStrengthDamageModifier, bool armorHitFormulaRedone, bool criticalStrikesIncreaseDamage, bool rolePlayRealismArcheryModule, bool ralzarMeanerMonstersEdit)
+		private static void InitMod(bool equipmentDamageEnhanced, bool fadingEnchantedItems, bool fixedStrengthDamageModifier, bool armorHitFormulaRedone, bool conditionBasedEffectiveness, bool criticalStrikesIncreaseDamage, bool rolePlayRealismArcheryModule, bool ralzarMeanerMonstersEdit)
         {
             Debug.Log("Begin mod init: PhysicalCombatAndArmorOverhaul");
 
@@ -90,8 +137,28 @@ namespace PhysicalCombatAndArmorOverhaul
             }
 			else
 				Debug.Log("PhysicalCombatAndArmorOverhaul: Enhanced Equipment Damage Module Disabled");
-			
-			if (fixedStrengthDamageModifier)
+
+            if (fadingEnchantedItems)
+            {
+                if (equipmentDamageEnhanced)
+                {
+                    Debug.Log("PhysicalCombatAndArmorOverhaul: Fading Enchanted Items Module Active");
+
+                    fadingEnchantedItemsModuleCheck = true;
+                }
+                else
+                {
+                    fadingEnchantedItemsModuleCheck = false;
+                    Debug.Log("PhysicalCombatAndArmorOverhaul: Fading Enchanted Items Module Is Dependent On Equipment Damage Enhanced To Function, So By Default is Disabled");
+                }
+            }
+            else
+            {
+                fadingEnchantedItemsModuleCheck = false;
+                Debug.Log("PhysicalCombatAndArmorOverhaul: Fading Enchanted Items Module Disabled");
+            }
+
+            if (fixedStrengthDamageModifier)
 			{
 				FormulaHelper.RegisterOverride(mod, "DamageModifier", (Func<int, int>)DamageModifier);
 				
@@ -119,7 +186,7 @@ namespace PhysicalCombatAndArmorOverhaul
 				FormulaHelper.RegisterOverride(mod, "CalculateStruckBodyPart", (Func<int>)CalculateStruckBodyPart);
 				FormulaHelper.RegisterOverride(mod, "CalculateBackstabChance", (Func<PlayerEntity, DaggerfallEntity, int, int>)CalculateBackstabChance);
 				FormulaHelper.RegisterOverride(mod, "CalculateBackstabDamage", (Func<int, int, int>)CalculateBackstabDamage);
-				FormulaHelper.RegisterOverride(mod, "GetBonusOrPenaltyByEnemyType", (Func<DaggerfallEntity, EnemyEntity, int>)GetBonusOrPenaltyByEnemyType);
+				//FormulaHelper.RegisterOverride(mod, "GetBonusOrPenaltyByEnemyType", (Func<DaggerfallEntity, EnemyEntity, int>)GetBonusOrPenaltyByEnemyType);
 				
 				Debug.Log("PhysicalCombatAndArmorOverhaul: Armor Hit Formula Redone Module Active");
 				
@@ -151,8 +218,28 @@ namespace PhysicalCombatAndArmorOverhaul
 				critStrikeModuleCheck = false;
 				Debug.Log("PhysicalCombatAndArmorOverhaul: Critical Strikes Increase Damage Module Disabled");
 			}
-			
-			if (rolePlayRealismArcheryModule)
+
+            if (conditionBasedEffectiveness)
+            {
+                if (armorHitFormulaRedone)
+                {
+                    Debug.Log("PhysicalCombatAndArmorOverhaul: Condition Based Effectiveness Module Active");
+
+                    condBasedEffectModuleCheck = true;
+                }
+                else
+                {
+                    condBasedEffectModuleCheck = false;
+                    Debug.Log("PhysicalCombatAndArmorOverhaul: Condition Based Effectiveness Module Is Dependent On Armor Hit Formula Redone To Function, So By Default is Disabled");
+                }
+            }
+            else
+            {
+                condBasedEffectModuleCheck = false;
+                Debug.Log("PhysicalCombatAndArmorOverhaul: Condition Based Effectiveness Module Disabled");
+            }
+
+            if (rolePlayRealismArcheryModule)
 			{
 				FormulaHelper.RegisterOverride(mod, "AdjustWeaponHitChanceMod", (Func<DaggerfallEntity, DaggerfallEntity, int, int, DaggerfallUnityItem, int>)AdjustWeaponHitChanceMod);
 				FormulaHelper.RegisterOverride(mod, "AdjustWeaponAttackDamage", (Func<DaggerfallEntity, DaggerfallEntity, int, int, DaggerfallUnityItem, int>)AdjustWeaponAttackDamage);
@@ -177,8 +264,8 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Rat
 				EnemyBasics.Enemies[0].MinDamage = 1;
 				EnemyBasics.Enemies[0].MaxDamage = 3;
-				EnemyBasics.Enemies[0].MinHealth = 15;
-				EnemyBasics.Enemies[0].MaxHealth = 30;
+				EnemyBasics.Enemies[0].MinHealth = 15;            // One attack per animation
+				EnemyBasics.Enemies[0].MaxHealth = 35;
 				EnemyBasics.Enemies[0].Level = 1;
 				EnemyBasics.Enemies[0].ArmorValue = 6;
 				// Estimated Avoidance Modifier (Lower means harder to hit): [(ArmorValue * 5) - (Enemy_dodge_skill/2)]: 30 - (35/2) = 12.5
@@ -189,8 +276,8 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Giant Bat
 				EnemyBasics.Enemies[3].MinDamage = 1;
 				EnemyBasics.Enemies[3].MaxDamage = 4;
-				EnemyBasics.Enemies[3].MinHealth = 5;
-				EnemyBasics.Enemies[3].MaxHealth = 12;
+				EnemyBasics.Enemies[3].MinHealth = 5;             // One attack per animation
+				EnemyBasics.Enemies[3].MaxHealth = 13;
 				EnemyBasics.Enemies[3].Level = 2;
 				EnemyBasics.Enemies[3].ArmorValue = 2;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 15 - (40/2) = -10
@@ -201,9 +288,9 @@ namespace PhysicalCombatAndArmorOverhaul
 				EnemyBasics.Enemies[4].MinDamage = 4;
 				EnemyBasics.Enemies[4].MaxDamage = 8;
 				EnemyBasics.Enemies[4].MinDamage2 = 6;
-				EnemyBasics.Enemies[4].MaxDamage2 = 10;
-				EnemyBasics.Enemies[4].MinDamage3 = 8;
-				EnemyBasics.Enemies[4].MaxDamage3 = 12;
+				EnemyBasics.Enemies[4].MaxDamage2 = 8;
+				EnemyBasics.Enemies[4].MinDamage3 = 6;            // One attack per animation
+				EnemyBasics.Enemies[4].MaxDamage3 = 10;
 				EnemyBasics.Enemies[4].MinHealth = 55;
 				EnemyBasics.Enemies[4].MaxHealth = 110;
 				EnemyBasics.Enemies[4].Level = 4;
@@ -215,10 +302,10 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Sabertooth Tiger		
 				EnemyBasics.Enemies[5].MinDamage = 6;
 				EnemyBasics.Enemies[5].MaxDamage = 12;
-				EnemyBasics.Enemies[5].MinDamage2 = 8;
-				EnemyBasics.Enemies[5].MaxDamage2 = 14;
-				EnemyBasics.Enemies[5].MinDamage3 = 10;
-				EnemyBasics.Enemies[5].MaxDamage3 = 20;
+				EnemyBasics.Enemies[5].MinDamage2 = 6;
+				EnemyBasics.Enemies[5].MaxDamage2 = 10;
+				EnemyBasics.Enemies[5].MinDamage3 = 8;           // One attack per animation
+				EnemyBasics.Enemies[5].MaxDamage3 = 14;
 				EnemyBasics.Enemies[5].MinHealth = 35;
 				EnemyBasics.Enemies[5].MaxHealth = 60;
 				EnemyBasics.Enemies[5].Level = 4;
@@ -230,7 +317,7 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Spider		
 				EnemyBasics.Enemies[6].MinDamage = 3;
 				EnemyBasics.Enemies[6].MaxDamage = 9;
-				EnemyBasics.Enemies[6].MinHealth = 12;
+				EnemyBasics.Enemies[6].MinHealth = 12;            // One attack per animation, Can Paralyze
 				EnemyBasics.Enemies[6].MaxHealth = 28;
 				EnemyBasics.Enemies[6].Level = 2;
 				EnemyBasics.Enemies[6].ArmorValue = 4;
@@ -239,12 +326,12 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-16) = 97%
 				
 				// Slaughterfish
-				EnemyBasics.Enemies[11].MinDamage = 3;
+				EnemyBasics.Enemies[11].MinDamage = 4;
 				EnemyBasics.Enemies[11].MaxDamage = 12;
-				EnemyBasics.Enemies[11].MinHealth = 20;
+				EnemyBasics.Enemies[11].MinHealth = 25;           // 1. Animation with one attack. 2. Animation with two attacks. 3. Animation with three attacks.
 				EnemyBasics.Enemies[11].MaxHealth = 50;
 				EnemyBasics.Enemies[11].Level = 7;
-				EnemyBasics.Enemies[11].ArmorValue = 5;
+				EnemyBasics.Enemies[11].ArmorValue = 4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 30 - (65/2) = -7.5
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-20.25) = 26.75%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-20.25) = 92.75%
@@ -252,8 +339,8 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Giant Scorpion		
 				EnemyBasics.Enemies[20].MinDamage = 7;
 				EnemyBasics.Enemies[20].MaxDamage = 16;
-				EnemyBasics.Enemies[20].MinHealth = 22;
-				EnemyBasics.Enemies[20].MaxHealth = 48;
+				EnemyBasics.Enemies[20].MinHealth = 22;           // One attack per animation, Can Paralyze
+				EnemyBasics.Enemies[20].MaxHealth = 40;
 				EnemyBasics.Enemies[20].Level = 4;
 				EnemyBasics.Enemies[20].ArmorValue = 5;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 25 - (50/2) = 0
@@ -267,8 +354,8 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Imp
 				EnemyBasics.Enemies[1].MinDamage = 2;
 				EnemyBasics.Enemies[1].MaxDamage = 13;
-				EnemyBasics.Enemies[1].MinHealth = 10;
-				EnemyBasics.Enemies[1].MaxHealth = 18;
+				EnemyBasics.Enemies[1].MinHealth = 10;            // One attack per animation
+				EnemyBasics.Enemies[1].MaxHealth = 20;
 				EnemyBasics.Enemies[1].Level = 2;
 				EnemyBasics.Enemies[1].ArmorValue = 3;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 15 - (40/2) = -5
@@ -276,14 +363,14 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-17) = 97%
 				
 				// Spriggan
-				EnemyBasics.Enemies[2].MinDamage = 1;
+				EnemyBasics.Enemies[2].MinDamage = 2;
 				EnemyBasics.Enemies[2].MaxDamage = 8;
-				EnemyBasics.Enemies[2].MinDamage2 = 1;
-				EnemyBasics.Enemies[2].MaxDamage2 = 8;
-				EnemyBasics.Enemies[2].MinDamage3 = 1;
-				EnemyBasics.Enemies[2].MaxDamage3 = 10;
-				EnemyBasics.Enemies[2].MinHealth = 18;
-				EnemyBasics.Enemies[2].MaxHealth = 36;
+				EnemyBasics.Enemies[2].MinDamage2 = 2;
+				EnemyBasics.Enemies[2].MaxDamage2 = 6;
+				EnemyBasics.Enemies[2].MinDamage3 = 3;            // One attack per animation
+				EnemyBasics.Enemies[2].MaxDamage3 = 7;
+				EnemyBasics.Enemies[2].MinHealth = 25;
+				EnemyBasics.Enemies[2].MaxHealth = 40;
 				EnemyBasics.Enemies[2].Level = 3;
 				EnemyBasics.Enemies[2].ArmorValue = -2;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -10 - (45/2) = -32.5
@@ -291,9 +378,9 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (3) + (-25.25) = 90.75%
 				
 				// Centaur
-				EnemyBasics.Enemies[8].MinDamage = 10;
-				EnemyBasics.Enemies[8].MaxDamage = 22;
-				EnemyBasics.Enemies[8].MinHealth = 30;
+				EnemyBasics.Enemies[8].MinDamage = 7;
+				EnemyBasics.Enemies[8].MaxDamage = 16;
+				EnemyBasics.Enemies[8].MinHealth = 35;            // 1. Animation with one attack. 2. Animation with two attacks.
 				EnemyBasics.Enemies[8].MaxHealth = 65;
 				EnemyBasics.Enemies[8].Level = 5;
 				EnemyBasics.Enemies[8].ArmorValue = 7;
@@ -302,9 +389,9 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-15.25) = 97.75%
 				
 				// Nymph
-				EnemyBasics.Enemies[10].MinDamage = 1;
-				EnemyBasics.Enemies[10].MaxDamage = 7;
-				EnemyBasics.Enemies[10].MinHealth = 20;
+				EnemyBasics.Enemies[10].MinDamage = 2;
+				EnemyBasics.Enemies[10].MaxDamage = 8;
+				EnemyBasics.Enemies[10].MinHealth = 25;           // One attack per animation
 				EnemyBasics.Enemies[10].MaxHealth = 45;
 				EnemyBasics.Enemies[10].Level = 6;
 				EnemyBasics.Enemies[10].ArmorValue = 0;
@@ -314,19 +401,19 @@ namespace PhysicalCombatAndArmorOverhaul
 				
 				// Harpy
 				EnemyBasics.Enemies[13].MinDamage = 7;
-				EnemyBasics.Enemies[13].MaxDamage = 12;
-				EnemyBasics.Enemies[13].MinHealth = 25;
+				EnemyBasics.Enemies[13].MaxDamage = 13;
+				EnemyBasics.Enemies[13].MinHealth = 25;           // One attack per animation
 				EnemyBasics.Enemies[13].MaxHealth = 60;
 				EnemyBasics.Enemies[13].Level = 8;
-				EnemyBasics.Enemies[13].ArmorValue = 3;
+				EnemyBasics.Enemies[13].ArmorValue = 4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 15 - (70/2) = -20
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-25.5) = 21.5%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-25.5) = 87.5%
 				
 				// Giant		
-				EnemyBasics.Enemies[16].MinDamage = 10;
-				EnemyBasics.Enemies[16].MaxDamage = 35;
-				EnemyBasics.Enemies[16].MinHealth = 70;
+				EnemyBasics.Enemies[16].MinDamage = 8;
+				EnemyBasics.Enemies[16].MaxDamage = 18;
+				EnemyBasics.Enemies[16].MinHealth = 70;           // Two attacks per animation
 				EnemyBasics.Enemies[16].MaxHealth = 110;
 				EnemyBasics.Enemies[16].Level = 10;
 				EnemyBasics.Enemies[16].ArmorValue = 10;
@@ -335,9 +422,9 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (1) + (-22) = 92%
 				
 				// Gargoyle
-				EnemyBasics.Enemies[22].MinDamage = 15;
-				EnemyBasics.Enemies[22].MaxDamage = 40;
-				EnemyBasics.Enemies[22].MinHealth = 50;
+				EnemyBasics.Enemies[22].MinDamage = 16;
+				EnemyBasics.Enemies[22].MaxDamage = 32;
+				EnemyBasics.Enemies[22].MinHealth = 50;           // One attack per animation
 				EnemyBasics.Enemies[22].MaxHealth = 100;
 				EnemyBasics.Enemies[22].Level = 14;
 				EnemyBasics.Enemies[22].ArmorValue = 2;
@@ -346,32 +433,32 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-35) = 78%
 				
 				// Dragonling
-				EnemyBasics.Enemies[34].MinDamage = 15;
-				EnemyBasics.Enemies[34].MaxDamage = 25;
-				EnemyBasics.Enemies[34].MinHealth = 35;
-				EnemyBasics.Enemies[34].MaxHealth = 70;
+				EnemyBasics.Enemies[34].MinDamage = 12;
+				EnemyBasics.Enemies[34].MaxDamage = 24;
+				EnemyBasics.Enemies[34].MinHealth = 35;           // One attack per animation
+				EnemyBasics.Enemies[34].MaxHealth = 60;
 				EnemyBasics.Enemies[34].Level = 16;
-				EnemyBasics.Enemies[34].ArmorValue = 5;
+				EnemyBasics.Enemies[34].ArmorValue = 0;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 25 - (100/2) = -25
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3) + (-29) = 17%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-29) = 83%
 				
-				// Dragonling [Quest Specific Dragonling? Has 500,000 Soul Point Value]
-				EnemyBasics.Enemies[40].MinDamage = 15;
-				EnemyBasics.Enemies[40].MaxDamage = 25;
-				EnemyBasics.Enemies[40].MinHealth = 35;
-				EnemyBasics.Enemies[40].MaxHealth = 70;
-				EnemyBasics.Enemies[40].Level = 16;
-				EnemyBasics.Enemies[40].ArmorValue = 5;
+				// Large Dragonling [Quest Specific Dragonling? Has 500,000 Soul Point Value]
+				EnemyBasics.Enemies[40].MinDamage = 35;
+				EnemyBasics.Enemies[40].MaxDamage = 95;
+				EnemyBasics.Enemies[40].MinHealth = 125;           // One attack per animation
+				EnemyBasics.Enemies[40].MaxHealth = 230;
+				EnemyBasics.Enemies[40].Level = 21;
+				EnemyBasics.Enemies[40].ArmorValue = -2;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 25 - (100/2) = -25
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3) + (-29) = 17%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-29) = 83%
 				
 				// Dreugh
-				EnemyBasics.Enemies[41].MinDamage = 10;
-				EnemyBasics.Enemies[41].MaxDamage = 18;
-				EnemyBasics.Enemies[41].MinHealth = 40;
-				EnemyBasics.Enemies[41].MaxHealth = 80;
+				EnemyBasics.Enemies[41].MinDamage = 6;
+				EnemyBasics.Enemies[41].MaxDamage = 16;
+				EnemyBasics.Enemies[41].MinHealth = 45;           // 1. Animation with one attack. 2. Animation with one attack. 3. Animation with two attacks.
+				EnemyBasics.Enemies[41].MaxHealth = 90;
 				EnemyBasics.Enemies[41].Level = 16;
 				EnemyBasics.Enemies[41].ArmorValue = 4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 20 - (100/2) = -30
@@ -379,12 +466,12 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-29) = 83%
 				
 				// Lamia
-				EnemyBasics.Enemies[42].MinDamage = 6;
-				EnemyBasics.Enemies[42].MaxDamage = 12;
-				EnemyBasics.Enemies[42].MinHealth = 30;
+				EnemyBasics.Enemies[42].MinDamage = 5;
+				EnemyBasics.Enemies[42].MaxDamage = 13;
+				EnemyBasics.Enemies[42].MinHealth = 35;           // 1. Animation with one attack. 2. Animation with two attacks. 3. Animation with three attacks.
 				EnemyBasics.Enemies[42].MaxHealth = 65;
 				EnemyBasics.Enemies[42].Level = 16;
-				EnemyBasics.Enemies[42].ArmorValue = 3;
+				EnemyBasics.Enemies[42].ArmorValue = 2;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 15 - (100/2) = -35
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3) + (-29) = 17%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-29) = 83%
@@ -400,45 +487,45 @@ namespace PhysicalCombatAndArmorOverhaul
 				//-------------------- Orcs -------------------------------------
 				
 				// Orc		
-				EnemyBasics.Enemies[7].MinDamage = 8;
-				EnemyBasics.Enemies[7].MaxDamage = 20;
-				EnemyBasics.Enemies[7].MinHealth = 40;
+				EnemyBasics.Enemies[7].MinDamage = 6;
+				EnemyBasics.Enemies[7].MaxDamage = 13;
+				EnemyBasics.Enemies[7].MinHealth = 40;            // 1. Animation with one attack. 2. Animation with two attacks.
 				EnemyBasics.Enemies[7].MaxHealth = 70;
 				EnemyBasics.Enemies[7].Level = 6;
-				EnemyBasics.Enemies[7].ArmorValue = 7;
+				EnemyBasics.Enemies[7].ArmorValue = 8;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 35 - (60/2) = 5
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (1) + (-19) = 31%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (3) + (-19) = 97%
 				
 				// Orc Sergeant		
-				EnemyBasics.Enemies[12].MinDamage = 15;
-				EnemyBasics.Enemies[12].MaxDamage = 30;
-				EnemyBasics.Enemies[12].MinHealth = 50;
+				EnemyBasics.Enemies[12].MinDamage = 8;
+				EnemyBasics.Enemies[12].MaxDamage = 18;
+				EnemyBasics.Enemies[12].MinHealth = 50;           // 1. Animation with one attack. 2. Animation with two attacks.
 				EnemyBasics.Enemies[12].MaxHealth = 85;
 				EnemyBasics.Enemies[12].Level = 9;
-				EnemyBasics.Enemies[12].ArmorValue = 4;
+				EnemyBasics.Enemies[12].ArmorValue = 6;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 20 - (75/2) = -17.5
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (1) + (-24.75) = 25.25%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (3) + (-24.75) = 91.25%
 
 				// Orc Shaman		
-				EnemyBasics.Enemies[21].MinDamage = 10;
-				EnemyBasics.Enemies[21].MaxDamage = 22;
-				EnemyBasics.Enemies[21].MinHealth = 45;
-				EnemyBasics.Enemies[21].MaxHealth = 80;
+				EnemyBasics.Enemies[21].MinDamage = 7;
+				EnemyBasics.Enemies[21].MaxDamage = 15;
+				EnemyBasics.Enemies[21].MinHealth = 45;           // 1. Animation with one attack. 2. Animation with one attack. 3. Animation with two attacks. 4. Animation with two attacks. 5. Animation with two attacks.
+				EnemyBasics.Enemies[21].MaxHealth = 70;
 				EnemyBasics.Enemies[21].Level = 15;
-				EnemyBasics.Enemies[21].ArmorValue = 3;
+				EnemyBasics.Enemies[21].ArmorValue = 4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 15 - (100/2) = -35
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (1) + (-29) = 21%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (3) + (-29) = 87%
 
 				// Orc Warlord		
-				EnemyBasics.Enemies[24].MinDamage = 25;
-				EnemyBasics.Enemies[24].MaxDamage = 45;
-				EnemyBasics.Enemies[24].MinHealth = 70;
-				EnemyBasics.Enemies[24].MaxHealth = 110;
+				EnemyBasics.Enemies[24].MinDamage = 20;
+				EnemyBasics.Enemies[24].MaxDamage = 36;
+				EnemyBasics.Enemies[24].MinHealth = 80;           // 1. Animation with one attack. 2. Animation with two attacks. 3. Animation with two attacks.
+				EnemyBasics.Enemies[24].MaxHealth = 125;
 				EnemyBasics.Enemies[24].Level = 19;
-				EnemyBasics.Enemies[24].ArmorValue = 0;
+				EnemyBasics.Enemies[24].ArmorValue = 2;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 0 - (100/2) = -50
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (1) + (-37) = 13%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (3) + (-37) = 79%
@@ -448,31 +535,31 @@ namespace PhysicalCombatAndArmorOverhaul
 				//-------------------- Lycanthropes -------------------------------------
 				
 				// Werewolf		
-				EnemyBasics.Enemies[9].MinDamage = 6;
-				EnemyBasics.Enemies[9].MaxDamage = 10;
-				EnemyBasics.Enemies[9].MinDamage2 = 8;
-				EnemyBasics.Enemies[9].MaxDamage2 = 12;
-				EnemyBasics.Enemies[9].MinDamage3 = 10;
-				EnemyBasics.Enemies[9].MaxDamage3 = 20;
-				EnemyBasics.Enemies[9].MinHealth = 35;
-				EnemyBasics.Enemies[9].MaxHealth = 60;
+				EnemyBasics.Enemies[9].MinDamage = 4;
+				EnemyBasics.Enemies[9].MaxDamage = 8;
+				EnemyBasics.Enemies[9].MinDamage2 = 6;
+				EnemyBasics.Enemies[9].MaxDamage2 = 8;
+				EnemyBasics.Enemies[9].MinDamage3 = 6;           // Two attacks per animation
+				EnemyBasics.Enemies[9].MaxDamage3 = 10;
+				EnemyBasics.Enemies[9].MinHealth = 30;
+				EnemyBasics.Enemies[9].MaxHealth = 55;
 				EnemyBasics.Enemies[9].Level = 8;
-				EnemyBasics.Enemies[9].ArmorValue = 2;
+				EnemyBasics.Enemies[9].ArmorValue = 3;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 10 - (70/2) = -25
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-25.5) = 21.5%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-25.5) = 87.5%
 
 				// Wereboar		
-				EnemyBasics.Enemies[14].MinDamage = 5;
-				EnemyBasics.Enemies[14].MaxDamage = 8;
-				EnemyBasics.Enemies[14].MinDamage2 = 8;
-				EnemyBasics.Enemies[14].MaxDamage2 = 10;
-				EnemyBasics.Enemies[14].MinDamage3 = 10;
-				EnemyBasics.Enemies[14].MaxDamage3 = 22;
-				EnemyBasics.Enemies[14].MinHealth = 55;
-				EnemyBasics.Enemies[14].MaxHealth = 90;
+				EnemyBasics.Enemies[14].MinDamage = 6;
+				EnemyBasics.Enemies[14].MaxDamage = 10;
+				EnemyBasics.Enemies[14].MinDamage2 = 6;
+				EnemyBasics.Enemies[14].MaxDamage2 = 12;
+				EnemyBasics.Enemies[14].MinDamage3 = 8;          // One attack per animation
+				EnemyBasics.Enemies[14].MaxDamage3 = 16;
+				EnemyBasics.Enemies[14].MinHealth = 65;
+				EnemyBasics.Enemies[14].MaxHealth = 95;
 				EnemyBasics.Enemies[14].Level = 8;
-				EnemyBasics.Enemies[14].ArmorValue = 4;
+				EnemyBasics.Enemies[14].ArmorValue = 5;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 20 - (70/2) = -15
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-1) + (-22.5) = 25.5%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (1) + (-22.5) = 91.5%
@@ -482,21 +569,21 @@ namespace PhysicalCombatAndArmorOverhaul
 				//-------------------- Atronachs -------------------------------------
 				
 				// Fire Atronach		
-				EnemyBasics.Enemies[35].MinDamage = 20;
-				EnemyBasics.Enemies[35].MaxDamage = 30;
-				EnemyBasics.Enemies[35].MinHealth = 40;
-				EnemyBasics.Enemies[35].MaxHealth = 65;
+				EnemyBasics.Enemies[35].MinDamage = 9;
+				EnemyBasics.Enemies[35].MaxDamage = 17;
+				EnemyBasics.Enemies[35].MinHealth = 40;           // One attack per animation
+				EnemyBasics.Enemies[35].MaxHealth = 60;
 				EnemyBasics.Enemies[35].Level = 16;
-				EnemyBasics.Enemies[35].ArmorValue = 2;
+				EnemyBasics.Enemies[35].ArmorValue = 3;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 10 - (100/2) = -40
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3) + (-33) = 13%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-33) = 79%
 
 				// Iron Atronach		
-				EnemyBasics.Enemies[36].MinDamage = 30;
-				EnemyBasics.Enemies[36].MaxDamage = 55;
-				EnemyBasics.Enemies[36].MinHealth = 80;
-				EnemyBasics.Enemies[36].MaxHealth = 150;
+				EnemyBasics.Enemies[36].MinDamage = 13;
+				EnemyBasics.Enemies[36].MaxDamage = 24;
+				EnemyBasics.Enemies[36].MinHealth = 95;           // One attack per animation
+				EnemyBasics.Enemies[36].MaxHealth = 155;
 				EnemyBasics.Enemies[36].Level = 21;
 				EnemyBasics.Enemies[36].ArmorValue = 4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 20 - (100/2) = -30
@@ -504,23 +591,23 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-32) = 80%
 
 				// Flesh Atronach		
-				EnemyBasics.Enemies[37].MinDamage = 7;
-				EnemyBasics.Enemies[37].MaxDamage = 15;
-				EnemyBasics.Enemies[37].MinHealth = 130;
-				EnemyBasics.Enemies[37].MaxHealth = 260;
+				EnemyBasics.Enemies[37].MinDamage = 3;
+				EnemyBasics.Enemies[37].MaxDamage = 8;
+				EnemyBasics.Enemies[37].MinHealth = 120;          // One attack per animation
+				EnemyBasics.Enemies[37].MaxHealth = 245;
 				EnemyBasics.Enemies[37].Level = 16;
-				EnemyBasics.Enemies[37].ArmorValue = 8;
+				EnemyBasics.Enemies[37].ArmorValue = 9;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 40 - (100/2) = -10
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3.5) + (-26) = 19.5%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1.5) + (-26) = 85.5%
 
 				// Ice Atronach		
-				EnemyBasics.Enemies[38].MinDamage = 15;
-				EnemyBasics.Enemies[38].MaxDamage = 25;
-				EnemyBasics.Enemies[38].MinHealth = 60;
+				EnemyBasics.Enemies[38].MinDamage = 5;
+				EnemyBasics.Enemies[38].MaxDamage = 13;
+				EnemyBasics.Enemies[38].MinHealth = 70;           // 1. Animation with one attack. 2. Animation with one attack.
 				EnemyBasics.Enemies[38].MaxHealth = 110;
 				EnemyBasics.Enemies[38].Level = 16;
-				EnemyBasics.Enemies[38].ArmorValue = 6;
+				EnemyBasics.Enemies[38].ArmorValue = 5;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 30 - (100/2) = -20
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-4) + (-32) = 13%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-2) + (-32) = 79%
@@ -530,10 +617,10 @@ namespace PhysicalCombatAndArmorOverhaul
 				//-------------------- Undead -------------------------------------
 				
 				// Skeletal Warrior
-				EnemyBasics.Enemies[15].MinDamage = 8;
-				EnemyBasics.Enemies[15].MaxDamage = 16;
-				EnemyBasics.Enemies[15].MinHealth = 25;
-				EnemyBasics.Enemies[15].MaxHealth = 75;
+				EnemyBasics.Enemies[15].MinDamage = 7;
+				EnemyBasics.Enemies[15].MaxDamage = 15;
+				EnemyBasics.Enemies[15].MinHealth = 30;           // One attack per animation
+				EnemyBasics.Enemies[15].MaxHealth = 55;
 				EnemyBasics.Enemies[15].Level = 9;
 				EnemyBasics.Enemies[15].ArmorValue = 4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 20 - (75/2) = -17.5
@@ -542,42 +629,42 @@ namespace PhysicalCombatAndArmorOverhaul
 				
 				// Zombie		
 				EnemyBasics.Enemies[17].MinDamage = 4;
-				EnemyBasics.Enemies[17].MaxDamage = 9;
-				EnemyBasics.Enemies[17].MinHealth = 70;
-				EnemyBasics.Enemies[17].MaxHealth = 120;
+				EnemyBasics.Enemies[17].MaxDamage = 8;
+				EnemyBasics.Enemies[17].MinHealth = 65;           // 1. Animation with one attack. 2. Animation with one attack.
+				EnemyBasics.Enemies[17].MaxHealth = 125;
 				EnemyBasics.Enemies[17].Level = 5;
-				EnemyBasics.Enemies[17].ArmorValue = 8;
+				EnemyBasics.Enemies[17].ArmorValue = 9;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 40 - (55/2) = 12.5
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-16.75) = 30.25%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-16.75) = 96.25%
 				
 				// Ghost
-				EnemyBasics.Enemies[18].MinDamage = 10;
-				EnemyBasics.Enemies[18].MaxDamage = 25;
-				EnemyBasics.Enemies[18].MinHealth = 20;
-				EnemyBasics.Enemies[18].MaxHealth = 55;
+				EnemyBasics.Enemies[18].MinDamage = 7;
+				EnemyBasics.Enemies[18].MaxDamage = 14;
+				EnemyBasics.Enemies[18].MinHealth = 20;           // One attack per animation, Can Cast Paralyze
+				EnemyBasics.Enemies[18].MaxHealth = 40;
 				EnemyBasics.Enemies[18].Level = 11;
-				EnemyBasics.Enemies[18].ArmorValue = 0;
+				EnemyBasics.Enemies[18].ArmorValue = 1;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 0 - (85/2) = -42.5
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-31.25) = 15.75%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-31.25) = 81.75%
 
 				// Mummy		
-				EnemyBasics.Enemies[19].MinDamage = 7;
-				EnemyBasics.Enemies[19].MaxDamage = 23;
-				EnemyBasics.Enemies[19].MinHealth = 60;
-				EnemyBasics.Enemies[19].MaxHealth = 135;
+				EnemyBasics.Enemies[19].MinDamage = 6;
+				EnemyBasics.Enemies[19].MaxDamage = 14;
+				EnemyBasics.Enemies[19].MinHealth = 75;           // One attack per animation
+				EnemyBasics.Enemies[19].MaxHealth = 110;
 				EnemyBasics.Enemies[19].Level = 15;
-				EnemyBasics.Enemies[19].ArmorValue = 0;
+				EnemyBasics.Enemies[19].ArmorValue = 3;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 0 - (100/2) = -50
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-40) = 7%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-40) = 73%
 				
 				// Wraith
-				EnemyBasics.Enemies[23].MinDamage = 15;
-				EnemyBasics.Enemies[23].MaxDamage = 35;
-				EnemyBasics.Enemies[23].MinHealth = 35;
-				EnemyBasics.Enemies[23].MaxHealth = 65;
+				EnemyBasics.Enemies[23].MinDamage = 16;
+				EnemyBasics.Enemies[23].MaxDamage = 32;
+				EnemyBasics.Enemies[23].MinHealth = 30;           // One attack per animation
+				EnemyBasics.Enemies[23].MaxHealth = 50;
 				EnemyBasics.Enemies[23].Level = 15;
 				EnemyBasics.Enemies[23].ArmorValue = 0;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 0 - (100/2) = -50
@@ -586,21 +673,21 @@ namespace PhysicalCombatAndArmorOverhaul
 				
 				
 				// Vampire
-				EnemyBasics.Enemies[28].MinDamage = 20;
-				EnemyBasics.Enemies[28].MaxDamage = 40;
-				EnemyBasics.Enemies[28].MinHealth = 65;
-				EnemyBasics.Enemies[28].MaxHealth = 100;
-				EnemyBasics.Enemies[28].Level = 19;
-				EnemyBasics.Enemies[28].ArmorValue = -2;
+				EnemyBasics.Enemies[28].MinDamage = 15;
+				EnemyBasics.Enemies[28].MaxDamage = 32;
+				EnemyBasics.Enemies[28].MinHealth = 70;           // One attack per animation
+				EnemyBasics.Enemies[28].MaxHealth = 105;
+				EnemyBasics.Enemies[28].Level = 17;
+				EnemyBasics.Enemies[28].ArmorValue = -3;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -10 - (100/2) = -60
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-4) + (-37) = 8%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-2) + (-37) = 74%
 
 				// Vampire Ancient		
-				EnemyBasics.Enemies[30].MinDamage = 30;
-				EnemyBasics.Enemies[30].MaxDamage = 50;
-				EnemyBasics.Enemies[30].MinHealth = 95;
-				EnemyBasics.Enemies[30].MaxHealth = 150;
+				EnemyBasics.Enemies[30].MinDamage = 18;
+				EnemyBasics.Enemies[30].MaxDamage = 35;
+				EnemyBasics.Enemies[30].MinHealth = 85;           // One attack per animation
+				EnemyBasics.Enemies[30].MaxHealth = 140;
 				EnemyBasics.Enemies[30].Level = 20;
 				EnemyBasics.Enemies[30].ArmorValue = -7;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -35 - (100/2) = -85
@@ -608,23 +695,23 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-41) = 71%
 				
 				// Lich		
-				EnemyBasics.Enemies[32].MinDamage = 35;
-				EnemyBasics.Enemies[32].MaxDamage = 60;
-				EnemyBasics.Enemies[32].MinHealth = 80;
+				EnemyBasics.Enemies[32].MinDamage = 25;
+				EnemyBasics.Enemies[32].MaxDamage = 45;
+				EnemyBasics.Enemies[32].MinHealth = 85;           // One attack per animation
 				EnemyBasics.Enemies[32].MaxHealth = 135;
 				EnemyBasics.Enemies[32].Level = 20;
-				EnemyBasics.Enemies[32].ArmorValue = -5;
+				EnemyBasics.Enemies[32].ArmorValue = -2;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -25 - (100/2) = -75
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3) + (-42) = 4%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-42) = 70%
 
 				// Ancient Lich		
-				EnemyBasics.Enemies[33].MinDamage = 40;
-				EnemyBasics.Enemies[33].MaxDamage = 70;
-				EnemyBasics.Enemies[33].MinHealth = 105;
-				EnemyBasics.Enemies[33].MaxHealth = 185;
+				EnemyBasics.Enemies[33].MinDamage = 35;
+				EnemyBasics.Enemies[33].MaxDamage = 55;
+				EnemyBasics.Enemies[33].MinHealth = 115;          // One attack per animation
+				EnemyBasics.Enemies[33].MaxHealth = 195;
 				EnemyBasics.Enemies[33].Level = 21;
-				EnemyBasics.Enemies[33].ArmorValue = -8;
+				EnemyBasics.Enemies[33].ArmorValue = -4;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -40 - (100/2) = -90
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-3) + (-45) = 1%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-1) + (-45) = 67%
@@ -634,43 +721,43 @@ namespace PhysicalCombatAndArmorOverhaul
 				//-------------------- Daedra -------------------------------------
 
 				// Frost Daedra
-				EnemyBasics.Enemies[25].MinDamage = 30;
-				EnemyBasics.Enemies[25].MaxDamage = 55;
-				EnemyBasics.Enemies[25].MinHealth = 85;
-				EnemyBasics.Enemies[25].MaxHealth = 155;
+				EnemyBasics.Enemies[25].MinDamage = 25;
+				EnemyBasics.Enemies[25].MaxDamage = 40;
+				EnemyBasics.Enemies[25].MinHealth = 90;           // 1. Animation with one attack. 2. Animation with two attacks.
+				EnemyBasics.Enemies[25].MaxHealth = 160;
 				EnemyBasics.Enemies[25].Level = 17;
-				EnemyBasics.Enemies[25].ArmorValue = -5;
+				EnemyBasics.Enemies[25].ArmorValue = -6;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -25 - (100/2) = -75
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-2) + (-40) = 7%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (0) + (-40) = 73%
 				
 				// Fire Daedra
-				EnemyBasics.Enemies[26].MinDamage = 60;
-				EnemyBasics.Enemies[26].MaxDamage = 85;
-				EnemyBasics.Enemies[26].MinHealth = 55;
-				EnemyBasics.Enemies[26].MaxHealth = 95;
+				EnemyBasics.Enemies[26].MinDamage = 35;
+				EnemyBasics.Enemies[26].MaxDamage = 55;
+				EnemyBasics.Enemies[26].MinHealth = 60;           // 1. Animation with one attack. 2. Animation with two attacks.
+				EnemyBasics.Enemies[26].MaxHealth = 100;
 				EnemyBasics.Enemies[26].Level = 17;
-				EnemyBasics.Enemies[26].ArmorValue = 0;
+				EnemyBasics.Enemies[26].ArmorValue = -3;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 0 - (100/2) = -40
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-4) + (-34) = 11%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-2) + (-34) = 77%
 				
 				// Daedroth
-				EnemyBasics.Enemies[27].MinDamage = 35;
-				EnemyBasics.Enemies[27].MaxDamage = 75;
-				EnemyBasics.Enemies[27].MinHealth = 65;
-				EnemyBasics.Enemies[27].MaxHealth = 95;
+				EnemyBasics.Enemies[27].MinDamage = 20;
+				EnemyBasics.Enemies[27].MaxDamage = 32;
+				EnemyBasics.Enemies[27].MinHealth = 70;           // 1. Animation with one attack. 2. Animation with two attacks. 3. Animation with three attacks.
+				EnemyBasics.Enemies[27].MaxHealth = 120;
 				EnemyBasics.Enemies[27].Level = 18;
-				EnemyBasics.Enemies[27].ArmorValue = 4;
+				EnemyBasics.Enemies[27].ArmorValue = -1;
 				// Estimated Avoidance Modifier (Lower means harder to hit): 20 - (100/2) = -30
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-4) + (-34) = 11%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-2) + (-34) = 77%
 				
 				// Daedra Seducer
-				EnemyBasics.Enemies[29].MinDamage = 35;
-				EnemyBasics.Enemies[29].MaxDamage = 75;
-				EnemyBasics.Enemies[29].MinHealth = 70;
-				EnemyBasics.Enemies[29].MaxHealth = 100;
+				EnemyBasics.Enemies[29].MinDamage = 30;
+				EnemyBasics.Enemies[29].MaxDamage = 60;
+				EnemyBasics.Enemies[29].MinHealth = 70;           // One attack per animation, seems to only melee attack in flying form, not in "human" form.
+				EnemyBasics.Enemies[29].MaxHealth = 95;
 				EnemyBasics.Enemies[29].Level = 19;
 				EnemyBasics.Enemies[29].ArmorValue = -8;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -40 - (100/2) = -90
@@ -678,12 +765,12 @@ namespace PhysicalCombatAndArmorOverhaul
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-2) + (-34) = 77%
 				
 				// Daedra Lord		
-				EnemyBasics.Enemies[31].MinDamage = 55;
-				EnemyBasics.Enemies[31].MaxDamage = 110;
-				EnemyBasics.Enemies[31].MinHealth = 175;
-				EnemyBasics.Enemies[31].MaxHealth = 275;
+				EnemyBasics.Enemies[31].MinDamage = 26;
+				EnemyBasics.Enemies[31].MaxDamage = 42;
+				EnemyBasics.Enemies[31].MinHealth = 170;          // 1. Animation with two attacks. 2. Animation with two attacks. 3. Animation with four attacks.
+				EnemyBasics.Enemies[31].MaxHealth = 285;
 				EnemyBasics.Enemies[31].Level = 21;
-				EnemyBasics.Enemies[31].ArmorValue = -12;
+				EnemyBasics.Enemies[31].ArmorValue = -9;
 				// Estimated Avoidance Modifier (Lower means harder to hit): -60 - (100/2) = -110
 				// Lvl. 1 Player Example: [Breton, Elven Wep, 35 wep skill, 60 agi, 50 luck, 30 crit skill]: (49) + (-4) + (-48) = -3%
 				// Lvl.14 Player Example: [Breton, Ebony Wep, 65 wep skill, 80 agi, 50 luck, 50 crit skill]: (113) + (-2) + (-48) = 63%
@@ -704,7 +791,7 @@ namespace PhysicalCombatAndArmorOverhaul
 		
 		public static int DamageModifier(int strength) // Fixes the inconsistency with Unity and Classic, changes the 5 to a 10 divider.
         {
-            return (int)Mathf.Floor((float)(strength - 50) / 10f);
+            return (int)Mathf.Floor((strength - 50) / 10f);
         }
 		
 		private static int CalculateAttackDamage(DaggerfallEntity attacker, DaggerfallEntity target, int enemyAnimStateRecord, int weaponAnimTime, DaggerfallUnityItem weapon)
@@ -721,7 +808,8 @@ namespace PhysicalCombatAndArmorOverhaul
 			bool unarmedAttack = false;
 			bool weaponAttack = false;
 			bool bluntWep = false;
-			bool monsterArmorCheck = false;
+            bool specialMonsterWeapon = false;
+            bool monsterArmorCheck = false;
 			bool critSuccess = false;
 			float critDamMulti = 1f;
 			int critHitAddi = 0;
@@ -740,7 +828,6 @@ namespace PhysicalCombatAndArmorOverhaul
             {
                 int weaponAverage = (weapon.GetBaseDamageMin() + weapon.GetBaseDamageMax()) / 2;
                 int noWeaponAverage = (AIAttacker.MobileEnemy.MinDamage + AIAttacker.MobileEnemy.MaxDamage) / 2;
-
                 if (noWeaponAverage > weaponAverage)
                 {
                     // Use hand-to-hand
@@ -761,6 +848,8 @@ namespace PhysicalCombatAndArmorOverhaul
                 }
                 // Get weapon skill used
                 skillID = weapon.GetWeaponSkillIDAsShort();
+                if (skillID == 32) // Checks if the weapon being used is in the Blunt Weapon category, then sets a bool value to true.
+                    bluntWep = true;
             }
             else
             {
@@ -847,15 +936,27 @@ namespace PhysicalCombatAndArmorOverhaul
                 {
                     if (CalculateSuccessfulHit(attacker, target, chanceToHitMod, struckBodyPart))
                     {
-                        damage = FormulaHelper.CalculateHandToHandAttackDamage(attacker, target, damageModifiers, attacker == player);
+                        damage = CalculateHandToHandAttackDamage(attacker, target, damageModifiers, attacker == player); // Added my own, non-overriden version of this method for modification.
 						
                         damage = CalculateBackstabDamage(damage, backstabChance);
                     }
                 }
                 else if (AIAttacker != null) // attacker is a monster
                 {
+                    specialMonsterWeapon = SpecialWeaponCheckForMonsters(attacker);
+
+                    if (specialMonsterWeapon)
+                    {
+                        unarmedAttack = false;
+                        weaponAttack = true;
+                        weapon = MonsterWeaponAssign(attacker);
+                        skillID = weapon.GetWeaponSkillIDAsShort();
+                        if (skillID == 32) // Checks if the weapon being used is in the Blunt Weapon category, then sets a bool value to true.
+                            bluntWep = true;
+                    }
+
                     // Handle multiple attacks by AI
-					int minBaseDamage = 0;
+                    int minBaseDamage = 0;
                     int maxBaseDamage = 0;
                     int attackNumber = 0;
                     while (attackNumber < 3) // Classic supports up to 5 attacks but no monster has more than 3
@@ -889,6 +990,8 @@ namespace PhysicalCombatAndArmorOverhaul
                         }
                         ++attackNumber;
                     }
+                    if (damage >= 1)
+                        damage = CalculateHandToHandAttackDamage(attacker, target, damage, attacker == player); // Added my own, non-overriden version of this method for modification.
                 }
             }
             // Handle weapon attacks
@@ -956,9 +1059,21 @@ namespace PhysicalCombatAndArmorOverhaul
 				if (shieldBlockSuccess)
 					shieldBlockSuccess = CompareShieldToUnderArmor(target, struckBodyPart, naturalDamResist);
 			}
+
+            if (condBasedEffectModuleCheck) // Only runs if "Condition Based Effectiveness" module is active. As well if a weapon is even being used.
+            {
+                if (attacker == player && weapon != null) // Only the player has weapon damage effected by condition value.
+                {
+                    damage = AlterDamageBasedOnWepCondition(damage, bluntWep, weapon);
+                    //Debug.LogFormat("Damage Multiplier Due To Weapon Condition = {0}", damage);
+                }
+            }
 			
-			DamageEquipment(attacker, target, damage, weapon, struckBodyPart); // Might alter this later so that equipment damage is only calculated with the amount that was reduced, not the whole initial amount, will see.
-			
+			if (damage < 1) // Cut off the execution if the damage is still not anything higher than 1 at this point in the method.
+				return damage;
+
+            DamageEquipment(attacker, target, damage, weapon, struckBodyPart); // Might alter this later so that equipment damage is only calculated with the amount that was reduced, not the whole initial amount, will see.
+
 			if(((target != player) && (AITarget.EntityType == EntityTypes.EnemyMonster)))
 			{
 				monsterArmorCheck = ArmorStruckVerification(target, struckBodyPart); // Check for if a monster has a piece of armor/shield hit by an attack, returns true if so.
@@ -1001,37 +1116,37 @@ namespace PhysicalCombatAndArmorOverhaul
 			{
 				if (unarmedAttack)
 				{
-                    Debug.Log("------------------------------------------------------------------------------------------");
-					Debug.LogFormat("Here is damage value before armor reduction is applied = {0}", damage);
+                    //Debug.Log("------------------------------------------------------------------------------------------");
+					//Debug.LogFormat("Here is damage value before armor reduction is applied = {0}", damage);
                     int damBefore = damage;
 
 					damage = CalculateArmorDamageReductionWithUnarmed(attacker, target, damage, struckBodyPart, naturalDamResist); // This will be the method call for armor reduction against unarmed.
 
 					int damAfter = damage;
-					Debug.LogFormat("Here is damage value after armor reduction = {0}", damage);
+					//Debug.LogFormat("Here is damage value after armor reduction = {0}", damage);
 					if (damBefore > 0)
 					{
 						int damReduPercent = ((100 * damAfter / damBefore) - 100) * -1;
-						Debug.LogFormat("Here is damage reduction percent = {0}%", damReduPercent);
+						//Debug.LogFormat("Here is damage reduction percent = {0}%", damReduPercent);
 					}
-                    Debug.Log("------------------------------------------------------------------------------------------");
+                    //Debug.Log("------------------------------------------------------------------------------------------");
                 }
 				else if (weaponAttack)
 				{
-                    Debug.Log("------------------------------------------------------------------------------------------");
-                    Debug.LogFormat("Here is damage value before armor reduction is applied = {0}", damage);
+                    //Debug.Log("------------------------------------------------------------------------------------------");
+                    //Debug.LogFormat("Here is damage value before armor reduction is applied = {0}", damage);
                     int damBefore = damage;
 
                     damage = CalculateArmorDamageReductionWithWeapon(attacker, target, damage, weapon, struckBodyPart, naturalDamResist); // This will be the method call for armor reduction against weapons.
 
 					int damAfter = damage;
-                    Debug.LogFormat("Here is damage value after armor reduction = {0}", damage);
+                    //Debug.LogFormat("Here is damage value after armor reduction = {0}", damage);
 					if (damBefore > 0)
 					{
 						int damReduPercent = ((100 * damAfter / damBefore) - 100) * -1;
-						Debug.LogFormat("Here is damage reduction percent = {0}%", damReduPercent);
+						//Debug.LogFormat("Here is damage reduction percent = {0}%", damReduPercent);
 					}
-                    Debug.Log("------------------------------------------------------------------------------------------");
+                    //Debug.Log("------------------------------------------------------------------------------------------");
                 }
 			}
 
@@ -1052,12 +1167,13 @@ namespace PhysicalCombatAndArmorOverhaul
                     }
                 }
             }
+
             //Debug.LogFormat("Damage {0} applied, animTime={1}  ({2})", damage, weaponAnimTime, GameManager.Instance.WeaponManager.ScreenWeapon.WeaponState);
 
             return damage;
 		}
 		
-		private static ToHitAndDamageMods CalculateSwingModifiers(FPSWeapon onscreenWeapon)
+		private static ToHitAndDamageMods CalculateSwingModifiers(FPSWeapon onscreenWeapon) // Make this a setting option obviously. Possibly modify this swing mod formula, so that is works in a similar way to Morrowind, where the attack direction "types" are not universal like here, but each weapon type has a different amount of attacks that are "better" or worse depending. Like a dagger having better damage with a thrusting attacking, rather than slashing, and the same for other weapon types. Possibly as well, make the different attack types depending on the weapon, have some degree of "resistance penetration" or something, like thrusting doing increased damage resistance penatration.
 		{
 			ToHitAndDamageMods mods = new ToHitAndDamageMods();
             if (onscreenWeapon != null)
@@ -1090,22 +1206,47 @@ namespace PhysicalCombatAndArmorOverhaul
 		
 		public static ToHitAndDamageMods CalculateProficiencyModifiers(DaggerfallEntity attacker, DaggerfallUnityItem weapon)
 		{
-			ToHitAndDamageMods mods = new ToHitAndDamageMods();
+			ToHitAndDamageMods mods = new ToHitAndDamageMods(); // If I feel that 50 starting points is too much for a level 1 character, I could always make the benefits only start past that 50 mark or something, maybe 40.
             if (weapon != null)
             {
                 // Apply weapon proficiency
                 if (((int)attacker.Career.ExpertProficiencies & weapon.GetWeaponSkillUsed()) != 0)
                 {
-                    mods.damageMod = (attacker.Level / 2) + 1; // Buffed from /3 to /2
-                    mods.toHitMod = attacker.Level;
+                    switch (weapon.GetWeaponSkillIDAsShort())
+                    {
+                        case (short)DFCareer.Skills.Archery:
+                            mods.damageMod = (attacker.Stats.LiveStrength / 25) + (attacker.Stats.LiveAgility / 25) + 1; //9
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 8) + (attacker.Stats.LiveSpeed / 20) + (attacker.Stats.LiveLuck / 20); //22.5
+                            break;
+                        case (short)DFCareer.Skills.Axe:
+                            mods.damageMod = (attacker.Stats.LiveStrength / 20) + (attacker.Stats.LiveAgility / 33) + 1; //9
+                            mods.toHitMod = (attacker.Stats.LiveStrength / 11) + (attacker.Stats.LiveAgility / 11) + (attacker.Stats.LiveLuck / 22); //22.5
+                            break;
+                        case (short)DFCareer.Skills.BluntWeapon:
+                            mods.damageMod = (attacker.Stats.LiveStrength / 20) + (attacker.Stats.LiveEndurance / 33) + 1; //9
+                            mods.toHitMod = (attacker.Stats.LiveStrength / 10) + (attacker.Stats.LiveAgility / 16) + (attacker.Stats.LiveLuck / 16); //22.5
+                            break;
+                        case (short)DFCareer.Skills.LongBlade:
+                            mods.damageMod = (attacker.Stats.LiveAgility / 20) + (attacker.Stats.LiveStrength / 33) + 1; //9
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 8) + (attacker.Stats.LiveSpeed / 20) + (attacker.Stats.LiveLuck / 20); //22.5
+                            break;
+                        case (short)DFCareer.Skills.ShortBlade:
+                            mods.damageMod = (attacker.Stats.LiveAgility / 25) + (attacker.Stats.LiveSpeed / 25) + 1; //9
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 10) + (attacker.Stats.LiveSpeed / 14) + (attacker.Stats.LiveLuck / 18); //22.5
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             // Apply hand-to-hand proficiency. Hand-to-hand proficiency is not applied in classic.
             else if (((int)attacker.Career.ExpertProficiencies & (int)DFCareer.ProficiencyFlags.HandToHand) != 0)
             {
-                mods.damageMod = (attacker.Level / 2) + 1; // Buffed from /3 to /2
-                mods.toHitMod = attacker.Level;
+                mods.damageMod = (attacker.Stats.LiveStrength / 50) + (attacker.Stats.LiveEndurance / 50) + (attacker.Stats.LiveAgility / 50) + (attacker.Stats.LiveSpeed / 50) + 1; //9
+                mods.toHitMod = (attacker.Stats.LiveAgility / 22) + (attacker.Stats.LiveSpeed / 22) + (attacker.Stats.LiveStrength / 22) + (attacker.Stats.LiveEndurance / 22) + (attacker.Stats.LiveLuck / 22); //22.5
             }
+            //Debug.LogFormat("Here is the damage modifier for this proficiency = {0}", mods.damageMod);
+            //Debug.LogFormat("Here is the accuracy modifier for this proficiency = {0}", mods.toHitMod);
             return mods;
 		}
 		
@@ -1114,25 +1255,98 @@ namespace PhysicalCombatAndArmorOverhaul
 			ToHitAndDamageMods mods = new ToHitAndDamageMods();
             if (weapon != null)
             {
-                if (player.RaceTemplate.ID == (int)Races.DarkElf)
+                switch (player.RaceTemplate.ID)
                 {
-                    mods.damageMod = attacker.Level / 2; // Buffed Racial Mod from /4 to /2
-                    mods.toHitMod = attacker.Level / 2; // Buffed Racial Mod from /4 to /2
-                }
-                else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.Archery)
-                {
-                    if (player.RaceTemplate.ID == (int)Races.WoodElf)
-                    {
-                        mods.damageMod = attacker.Level / 3;
-                        mods.toHitMod = attacker.Level / 1; // Buffed Racial Mod from /3 to /1
-                    }
-                }
-                else if (player.RaceTemplate.ID == (int)Races.Redguard)
-                {
-                    mods.damageMod = attacker.Level / 3;
-                    mods.toHitMod = attacker.Level / 1; // Buffed Racial Mod from /3 to /1
+                    case (int)Races.Argonian:
+                        if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.ShortBlade)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveSpeed / 33); //6
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 16) + (attacker.Stats.LiveSpeed / 33) + (attacker.Stats.LiveLuck / 33); //12
+                        }
+                        break;
+                    case (int)Races.DarkElf:
+                        if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.LongBlade)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveAgility / 25) + (attacker.Stats.LiveStrength / 25); //8
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 25) + (attacker.Stats.LiveSpeed / 33) + (attacker.Stats.LiveLuck / 33); //10
+                        }
+                        else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.ShortBlade)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveAgility / 50) + (attacker.Stats.LiveSpeed / 50); //4
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveSpeed / 33) + (attacker.Stats.LiveLuck / 33); //9
+                        }
+                        break;
+                    case (int)Races.Khajiit:
+                        if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.ShortBlade)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveSpeed / 50); //5
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 20) + (attacker.Stats.LiveSpeed / 33) + (attacker.Stats.LiveLuck / 50); //10
+                        }
+                        break;
+                    case (int)Races.Nord:
+                        if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.Axe)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveStrength / 16) + (attacker.Stats.LiveAgility / 33); //9
+                            mods.toHitMod = (attacker.Stats.LiveStrength / 33) + (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveLuck / 33); //9
+                        }
+                        else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.BluntWeapon)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveStrength / 25) + (attacker.Stats.LiveEndurance / 25); //8
+                            mods.toHitMod = (attacker.Stats.LiveStrength / 25) + (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveLuck / 33); //10
+                        }
+                        break;
+                    case (int)Races.Redguard:
+                        if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.LongBlade)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveStrength / 50); //5
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 10) + (attacker.Stats.LiveSpeed / 25) + (attacker.Stats.LiveLuck / 25); //18
+                        }
+                        else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.BluntWeapon)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveStrength / 33) + (attacker.Stats.LiveEndurance / 33); //6
+                            mods.toHitMod = (attacker.Stats.LiveStrength / 20) + (attacker.Stats.LiveAgility / 25) + (attacker.Stats.LiveLuck / 33); //12
+                        }
+                        else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.Axe)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveStrength / 16) + (attacker.Stats.LiveAgility / 33); //6
+                            mods.toHitMod = (attacker.Stats.LiveStrength / 33) + (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveLuck / 33); //12
+                        }
+                        else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.Archery)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveStrength / 50) + (attacker.Stats.LiveAgility / 50); //4
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 25) + (attacker.Stats.LiveSpeed / 33) + (attacker.Stats.LiveLuck / 33); //10
+                        }
+                        break;
+                    case (int)Races.WoodElf:
+                        if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.ShortBlade)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveAgility / 33) + (attacker.Stats.LiveSpeed / 50); //5
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 20) + (attacker.Stats.LiveSpeed / 33) + (attacker.Stats.LiveLuck / 50); //10
+                        }
+                        else if (weapon.GetWeaponSkillIDAsShort() == (short)DFCareer.Skills.Archery)
+                        {
+                            mods.damageMod = (attacker.Stats.LiveStrength / 25) + (attacker.Stats.LiveAgility / 25); //8
+                            mods.toHitMod = (attacker.Stats.LiveAgility / 10) + (attacker.Stats.LiveSpeed / 25) + (attacker.Stats.LiveLuck / 25); //18
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
+            else if (weapon == null)
+            {
+                if (player.RaceTemplate.ID == (int)Races.Khajiit)
+                {
+                    mods.damageMod = (attacker.Stats.LiveStrength / 33) + (attacker.Stats.LiveEndurance / 33) + (attacker.Stats.LiveAgility / 50) + (attacker.Stats.LiveSpeed / 50); //10
+                    mods.toHitMod = (attacker.Stats.LiveAgility / 25) + (attacker.Stats.LiveSpeed / 50) + (attacker.Stats.LiveStrength / 50) + (attacker.Stats.LiveEndurance / 50) + (attacker.Stats.LiveLuck / 50); //12
+                }
+                else if (player.RaceTemplate.ID == (int)Races.Nord)
+                {
+                    mods.damageMod = (attacker.Stats.LiveStrength / 33) + (attacker.Stats.LiveEndurance / 50); //5
+                }
+            }
+            //Debug.LogFormat("Here is the damage modifier for this Race and Weapon = {0}", mods.damageMod);
+            //Debug.LogFormat("Here is the accuracy modifier for this Race and Weapon = {0}", mods.toHitMod);
             return mods;
 		}
 		
@@ -1189,10 +1403,11 @@ namespace PhysicalCombatAndArmorOverhaul
             if (damage < 1)
                 damage = 0;
 
-            damage += GetBonusOrPenaltyByEnemyType(attacker, AITarget);
-			
-			// Mod hook for adjusting final damage. (is a no-op in DFU)
-			if (archeryModuleCheck)
+            if (damage >= 1)
+                damage += GetBonusOrPenaltyByEnemyType(attacker, target); // Added my own, non-overriden version of this method for modification.
+
+            // Mod hook for adjusting final damage. (is a no-op in DFU)
+            if (archeryModuleCheck)
 				damage = AdjustWeaponAttackDamage(attacker, target, damage, weaponAnimTime, weapon);
 
             return damage;
@@ -1320,7 +1535,7 @@ namespace PhysicalCombatAndArmorOverhaul
 						chanceToHitMod += (attacker.Skills.GetLiveSkillValue(DFCareer.Skills.CriticalStrike) / 3); // Now for player, at 100 crit skill, "crit" success will give 33 more hit-mod
 						//DaggerfallUI.Instance.PopupMessage("A Devastating Strike!"); // Turned off seems pretty annoying, even with the lower crit roll chance, for now at least.
 					}
-					//Debug.LogFormat("After Crit, Player = {0}", chanceToHitMod); // May consider eventually moving/adding the Critical Strike equation to the damage modifier formula, likely not in 1.0 of this mod, but maybe later on.
+					//Debug.LogFormat("After Crit, Player = {0}", chanceToHitMod);
 				}
 				// Apply critical strike modifier. For Enemies.
 				else
@@ -1368,15 +1583,16 @@ namespace PhysicalCombatAndArmorOverhaul
 			int atkStrength = attacker.Stats.LiveStrength;
 			int tarMatMod = 0;
 			int matDifference = 0;
-			bool bluntWep = false;
+            bool bluntWep = false;
 			bool shtbladeWep = false;
 			bool missileWep = false;
-			int wepEqualize = 1;
+            int wepEqualize = 1;
 			int wepWeight = 1;
 			float wepDamResist = 1f;
 			float armorDamResist = 1f;
-			
-			if (!armorHitFormulaModuleCheck) // Uses the regular shield formula if the "armorHitFormula" Module is disabled in settings, but the equipment damage module is still active.
+            int startItemCondPer = 0;
+
+            if (!armorHitFormulaModuleCheck) // Uses the regular shield formula if the "armorHitFormula" Module is disabled in settings, but the equipment damage module is still active.
 			{
 				DaggerfallUnityItem shield = target.ItemEquipTable.GetItem(EquipSlots.LeftHand); // Checks if character is using a shield or not.
 				shieldBlockSuccess = false;
@@ -1407,8 +1623,9 @@ namespace PhysicalCombatAndArmorOverhaul
 					wepDam = (int)Mathf.Ceil(wepDam/wepDamResist);
 					bluntWep = true;
 					wepWeight = (int)Mathf.Ceil(weapon.EffectiveUnitWeightInKg());
-					
-					ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
+
+                    startItemCondPer = weapon.ConditionPercentage;
+                    ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
 				}
 				else if (weapon.GetWeaponSkillIDAsShort() == 28) // Checks if the weapon being used is in the Short Blade category, then sets a bool value to true.
 				{
@@ -1426,26 +1643,29 @@ namespace PhysicalCombatAndArmorOverhaul
 						wepDam = (int)Mathf.Ceil(wepDam/wepDamResist);
 						shtbladeWep = true;
 					}
-					
-					ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
+
+                    startItemCondPer = weapon.ConditionPercentage;
+                    ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
 				}
 				else if (weapon.GetWeaponSkillIDAsShort() == 33) // Checks if the weapon being used is in the Missile Weapon category, then sets a bool value to true.
 				{
 					missileWep = true;
-					
-					ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
+
+                    startItemCondPer = weapon.ConditionPercentage;
+                    ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
 				}
 				else // If all other weapons categories have not been found, it defaults to this, which currently includes long blades and axes.
 				{
 					wepDam += (atkStrength / 10);
 					wepDamResist = (wepEqualize*.20f) + 1;
 					wepDam = (int)Mathf.Ceil(wepDam/wepDamResist);
-					
-					ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
+
+                    startItemCondPer = weapon.ConditionPercentage;
+                    ApplyConditionDamageThroughWeaponDamage(weapon, attacker, wepDam, bluntWep, shtbladeWep, missileWep, wepEqualize); // Does condition damage to the attackers weapon.
 				}
 
 				if (attacker == GameManager.Instance.PlayerEntity)
-					WarningMessagePlayerEquipmentCondition(weapon);
+					WarningMessagePlayerEquipmentCondition(weapon, startItemCondPer);
 
 				if (shieldBlockSuccess)
 				{
@@ -1455,11 +1675,12 @@ namespace PhysicalCombatAndArmorOverhaul
 					tarMatMod = ArmorMaterialModifierFinder(shield);
 					matDifference = tarMatMod - atkMatMod;
 					damage = MaterialDifferenceDamageCalculation(shield, matDifference, atkStrength, damage, bluntWep, wepWeight, shieldBlockSuccess);
-					
-					ApplyConditionDamageThroughWeaponDamage(shield, target, damage, bluntWep, shtbladeWep, missileWep, wepEqualize);
+
+                    startItemCondPer = shield.ConditionPercentage;
+                    ApplyConditionDamageThroughWeaponDamage(shield, target, damage, bluntWep, shtbladeWep, missileWep, wepEqualize);
 					
 					if (target == GameManager.Instance.PlayerEntity)
-						WarningMessagePlayerEquipmentCondition(shield);
+						WarningMessagePlayerEquipmentCondition(shield, startItemCondPer);
 				}
 				else
 				{
@@ -1472,11 +1693,12 @@ namespace PhysicalCombatAndArmorOverhaul
 						tarMatMod = ArmorMaterialModifierFinder(armor);
 						matDifference = tarMatMod - atkMatMod;
 						damage = MaterialDifferenceDamageCalculation(armor, matDifference, atkStrength, damage, bluntWep, wepWeight, shieldBlockSuccess);
-						
-						ApplyConditionDamageThroughWeaponDamage(armor, target, damage, bluntWep, shtbladeWep, missileWep, wepEqualize);
+
+                        startItemCondPer = armor.ConditionPercentage;
+                        ApplyConditionDamageThroughWeaponDamage(armor, target, damage, bluntWep, shtbladeWep, missileWep, wepEqualize);
 						
 						if (target == GameManager.Instance.PlayerEntity)
-							WarningMessagePlayerEquipmentCondition(armor);
+							WarningMessagePlayerEquipmentCondition(armor, startItemCondPer);
 					}
 				}
 				return false;
@@ -1492,11 +1714,12 @@ namespace PhysicalCombatAndArmorOverhaul
 					atkStrength /= 5;
 					armorDamResist = (tarMatMod*.40f) + 1;
 					damage = (int)Mathf.Ceil((damage + atkStrength)/armorDamResist);
-					
-					ApplyConditionDamageThroughUnarmedDamage(shield, target, damage);
+
+                    startItemCondPer = shield.ConditionPercentage;
+                    ApplyConditionDamageThroughUnarmedDamage(shield, target, damage);
 					
 					if (target == GameManager.Instance.PlayerEntity)
-						WarningMessagePlayerEquipmentCondition(shield);
+						WarningMessagePlayerEquipmentCondition(shield, startItemCondPer);
 				}
 				else
 				{
@@ -1510,11 +1733,12 @@ namespace PhysicalCombatAndArmorOverhaul
 						atkStrength /= 5;
 						armorDamResist = (tarMatMod*.20f) + 1;
 						damage = (int)Mathf.Ceil((damage + atkStrength)/armorDamResist);
-						
-						ApplyConditionDamageThroughUnarmedDamage(armor, target, damage);
+
+                        startItemCondPer = armor.ConditionPercentage;
+                        ApplyConditionDamageThroughUnarmedDamage(armor, target, damage);
 						
 						if (target == GameManager.Instance.PlayerEntity)				
-							WarningMessagePlayerEquipmentCondition(armor);
+							WarningMessagePlayerEquipmentCondition(armor, startItemCondPer);
 					}
 				}
 				return false;
@@ -1575,7 +1799,82 @@ namespace PhysicalCombatAndArmorOverhaul
 		#endregion
 		
 		#region Mod Specific Methods
-		
+
+        // Multiplies the damage of an attack with a weapon, based on the current condition of said weapon, blunt less effected, but also does not benefit as much from higher condition.
+        private static int AlterDamageBasedOnWepCondition(int damage, bool bluntWep, DaggerfallUnityItem weapon)
+        {
+            int condPerc = weapon.ConditionPercentage;
+
+            if (bluntWep)
+            {
+                if (condPerc >= 92)                         // New
+                    damage = (int)Mathf.Round(damage * 1.1f);
+                else if (condPerc <= 91 && condPerc >= 76)  // Almost New
+                    damage = damage * 1;
+                else if (condPerc <= 75 && condPerc >= 61)  // Slightly Used
+                    damage = damage * 1;
+                else if (condPerc <= 60 && condPerc >= 41)  // Used
+                    damage = (int)Mathf.Round(damage * 0.90f);
+                else if (condPerc <= 40 && condPerc >= 16)  // Worn
+                    damage = (int)Mathf.Round(damage * 0.80f);
+                else if (condPerc <= 15 && condPerc >= 6)   // Battered
+                    damage = (int)Mathf.Round(damage * 0.65f);
+                else if (condPerc <= 5)                     // Useless, Broken
+                    damage = (int)Mathf.Round(damage * 0.50f);
+                else                                        // Other
+                    damage = damage * 1;
+            }
+            else
+            {
+                if (condPerc >= 92)                         // New
+                    damage = (int)Mathf.Round(damage * 1.3f);
+                else if (condPerc <= 91 && condPerc >= 76)  // Almost New
+                    damage = (int)Mathf.Round(damage * 1.1f);
+                else if (condPerc <= 75 && condPerc >= 61)  // Slightly Used
+                    damage = damage * 1;
+                else if (condPerc <= 60 && condPerc >= 41)  // Used
+                    damage = (int)Mathf.Round(damage * 0.85f);
+                else if (condPerc <= 40 && condPerc >= 16)  // Worn
+                    damage = (int)Mathf.Round(damage * 0.70f);
+                else if (condPerc <= 15 && condPerc >= 6)   // Battered
+                    damage = (int)Mathf.Round(damage * 0.45f);
+                else if (condPerc <= 5)                     // Useless, Broken
+                    damage = (int)Mathf.Round(damage * 0.25f);
+                else                                        // Other
+                    damage = damage * 1;
+            }
+            return damage;
+        }
+
+        // Provides the multiplier that will be applied to an armor piece, based on the current condition percentage of said armor.
+        private static float AlterArmorReducBasedOnItemCondition(DaggerfallUnityItem armor)
+        {
+            if (armor == null) // To attempt to keep object reference compile error from occuring when worn shield breaks from an attack.
+                return 1f;
+
+            int condPerc = armor.ConditionPercentage;
+            float condMulti = 1f;
+
+            if (condPerc >= 92)                         // New
+                condMulti = condMulti * 0.85f;
+            else if (condPerc <= 91 && condPerc >= 76)  // Almost New
+                condMulti = condMulti * 0.95f;
+            else if (condPerc <= 75 && condPerc >= 61)  // Slightly Used
+                condMulti = condMulti * 1;
+            else if (condPerc <= 60 && condPerc >= 41)  // Used
+                condMulti = condMulti * 1.10f;
+            else if (condPerc <= 40 && condPerc >= 16)  // Worn
+                condMulti = condMulti * 1.20f;
+            else if (condPerc <= 15 && condPerc >= 6)   // Battered
+                condMulti = condMulti * 1.35f;
+            else if (condPerc <= 5)                     // Useless, Broken
+                condMulti = condMulti * 1.50f;
+            else                                        // Other
+                condMulti = condMulti * 1;
+
+            return condMulti;
+        }
+
 		private static int CalculateArmorDamageReductionWithWeapon(DaggerfallEntity attacker, DaggerfallEntity target, int damage, DaggerfallUnityItem weapon, int struckBodyPart, float naturalDamResist)
 		{
 			int atkStrength = attacker.Stats.LiveStrength;
@@ -1619,7 +1918,6 @@ namespace PhysicalCombatAndArmorOverhaul
 		}
 			// Once I make it easier to add onto damage reduction values, I should take weapon weight into consideration and have it so heavier weapons do more damage resistance penetration, this would somewhat help in balancing out weapons that are just clearly better than others. Like the broadsword having less damage and weighing more than the longsword, that does not really make much sense to me, the broadsword does look a lot cooler at least.
 			// Possibly try and make it so getting hit in different parts of the body can do different things like bonus damage for the attack or something around that.
-			// If I do make it so the player hits monsters more often, I will want to also make it so knock-back is tweeked heavily so that enemies can't just be super easily stun-locked by any weapon.
 			// Will probably do some tests with and without my damage reduction mod, and try and see what the "Time Till Death" is for both. Maybe my mod will make death quicker, maybe it will make it slower compared to non-modded daggerfall.
 			// Something else I would like to add onto this mod eventually. Make it so, that when an attack is reduced from any amount that did not start as zero, to zero after damage reduction, make a sound that is different than the normal "miss" "woosh" sound, make one that sounds like something clanging off a metal surface or something of the like. To give an indication that armor/shield has completely negated an attacked.
 			// As this mod develops, I will definitely want/have to convert the "percentage" reduction amounts to an array or something, so I would more readily be able to add/subtract from these values on the fly, for situations like adding other variables into play that would chance the damage resistance amount on a per-attack basis.
@@ -1661,6 +1959,7 @@ namespace PhysicalCombatAndArmorOverhaul
 			bool unarmedCheck = true;
 			bool bluntWep = false;
 			int wepWeight = 1;
+            float condMulti = 1f;
 			
 			
 			if (shieldCheck) // This part is a bit more difficult than I expected, I think i'll just have to make the shields a flat % reduction, regardless of material and what is being worn under the shield. Base this on the type of shield being used, also make blunt do more against shields than other types. Later on, i'll want to improve this to consider what is under the shield, as well as other factors, just do this for the time being.
@@ -1671,30 +1970,36 @@ namespace PhysicalCombatAndArmorOverhaul
 			}
 			else // Possibly add later on enemies/monsters that can more readily penetrate through damage reduction from armor and such, for now though, just do with this for now.
 			{
+                if (condBasedEffectModuleCheck) // Only runs if "Condition Based Effectiveness" module is active.
+                {
+                    condMulti = AlterArmorReducBasedOnItemCondition(item);
+                    //Debug.LogFormat("Armor Against Unarmed Reduction Multiplier Due To Condition = {0}", condMulti);
+                }
+
                 switch (armorMaterial)
                 {
                     case 1: // leather
-                        return (int)Mathf.Round(damage * (.90f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.90f * condMulti), .95f) - naturalDamResist));
                     case 2: // chains 1 and 2
-                        return (int)Mathf.Round(damage * (.84f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.84f * condMulti), .95f) - naturalDamResist));
                     case 3: // iron
-                        return (int)Mathf.Round(damage * (.80f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.80f * condMulti), .92f) - naturalDamResist));
                     case 4: // steel and silver
-                        return (int)Mathf.Round(damage * (.72f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.72f * condMulti), .89f) - naturalDamResist));
                     case 5: // elven
-                        return (int)Mathf.Round(damage * (.66f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.66f * condMulti), .86f) - naturalDamResist));
                     case 6: // dwarven
-                        return (int)Mathf.Round(damage * (.58f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.58f * condMulti), .83f) - naturalDamResist));
                     case 7: // mithril and adamantium
-                        return (int)Mathf.Round(damage * (.52f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.52f * condMulti), .80f) - naturalDamResist));
                     case 8: // ebony
-                        return (int)Mathf.Round(damage * (.46f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.46f * condMulti), .76f) - naturalDamResist));
                     case 9: // orcish
-                        return (int)Mathf.Round(damage * (.36f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.36f * condMulti), .70f) - naturalDamResist));
                     case 10: // daedric
-                        return (int)Mathf.Round(damage * (.30f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.30f * condMulti), .65f) - naturalDamResist));
                     default:
-                        return (int)Mathf.Round(damage * (1f - naturalDamResist)); // May have to change this? Don't think so though.
+                        return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                 }
 			}
 		}
@@ -1703,8 +2008,9 @@ namespace PhysicalCombatAndArmorOverhaul
 		private static int PercentageReductionCalculationWithWeapon(DaggerfallUnityItem item, int armorMaterial, int atkStrength, int damage, bool bluntWep, int wepWeight, bool shieldCheck, float naturalDamResist)
 		{
 			bool unarmedCheck = false;
-			
-			if (shieldCheck) // This part is a bit more difficult than I expected, I think i'll just have to make the shields a flat % reduction, regardless of material and what is being worn under the shield. Base this on the type of shield being used, also make blunt do more against shields than other types. Later on, i'll want to improve this to consider what is under the shield, as well as other factors, just do this for the time being.
+            float condMulti = 1f;
+
+            if (shieldCheck) // This part is a bit more difficult than I expected, I think i'll just have to make the shields a flat % reduction, regardless of material and what is being worn under the shield. Base this on the type of shield being used, also make blunt do more against shields than other types. Later on, i'll want to improve this to consider what is under the shield, as well as other factors, just do this for the time being.
 			{
 				damage = ShieldDamageReductionCalculation(item, armorMaterial, atkStrength, damage, bluntWep, wepWeight, unarmedCheck, naturalDamResist);
 				
@@ -1712,32 +2018,38 @@ namespace PhysicalCombatAndArmorOverhaul
 			}
 			else
 			{
-				if (bluntWep)
+                if (condBasedEffectModuleCheck) // Only runs if "Condition Based Effectiveness" module is active.
+                {
+                    condMulti = AlterArmorReducBasedOnItemCondition(item);
+                    //Debug.LogFormat("Armor Against Weapon Reduction Multiplier Due To Condition = {0}", condMulti);
+                }
+
+                if (bluntWep)
 				{
                     switch (armorMaterial)
                     {
                         case 1: // leather
-                            return (int)Mathf.Round(damage * (.72f - naturalDamResist)); // Made it so blunt weapons do 4% more damage to plate armors (most of them) compared to other weapons.
+                            return (int)Mathf.Round(damage * (Mathf.Min((.72f * condMulti), .89f) - naturalDamResist)); // Blunt weapons do 4% more damage to plate armors, compared to other weapons.
                         case 2: // chains 1 and 2
-                            return (int)Mathf.Round(damage * (.88f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.88f * condMulti), .95f) - naturalDamResist));
                         case 3: // iron
-                            return (int)Mathf.Round(damage * (.92f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.92f * condMulti), .95f) - naturalDamResist));
                         case 4: // steel and silver
-                            return (int)Mathf.Round(damage * (.84f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.84f * condMulti), .93f) - naturalDamResist));
                         case 5: // elven
-                            return (int)Mathf.Round(damage * (.80f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.80f * condMulti), .90f) - naturalDamResist));
                         case 6: // dwarven
-                            return (int)Mathf.Round(damage * (.72f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.72f * condMulti), .87f) - naturalDamResist));
                         case 7: // mithril and adamantium
-                            return (int)Mathf.Round(damage * (.64f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.64f * condMulti), .84f) - naturalDamResist));
                         case 8: // ebony
-                            return (int)Mathf.Round(damage * (.56f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.56f * condMulti), .78f) - naturalDamResist));
                         case 9: // orcish
-                            return (int)Mathf.Round(damage * (.48f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.48f * condMulti), .70f) - naturalDamResist));
                         case 10: // daedric
-                            return (int)Mathf.Round(damage * (.40f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.40f * condMulti), .58f) - naturalDamResist));
                         default:
-                            return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                     }
                 }
 				else
@@ -1745,27 +2057,27 @@ namespace PhysicalCombatAndArmorOverhaul
                     switch (armorMaterial)
                     {
                         case 1: // leather
-                            return (int)Mathf.Round(damage * (.88f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.88f * condMulti), .95f) - naturalDamResist));
                         case 2: // chains 1 and 2
-                            return (int)Mathf.Round(damage * (.72f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.72f * condMulti), .89f) - naturalDamResist));
                         case 3: // iron
-                            return (int)Mathf.Round(damage * (.86f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.86f * condMulti), .90f) - naturalDamResist));
                         case 4: // steel and silver
-                            return (int)Mathf.Round(damage * (.78f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.78f * condMulti), .88f) - naturalDamResist));
                         case 5: // elven
-                            return (int)Mathf.Round(damage * (.74f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.74f * condMulti), .85f) - naturalDamResist));
                         case 6: // dwarven
-                            return (int)Mathf.Round(damage * (.66f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.66f * condMulti), .82f) - naturalDamResist));
                         case 7: // mithril and adamantium
-                            return (int)Mathf.Round(damage * (.58f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.58f * condMulti), .78f) - naturalDamResist));
                         case 8: // ebony
-                            return (int)Mathf.Round(damage * (.50f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.50f * condMulti), .73f) - naturalDamResist));
                         case 9: // orcish
-                            return (int)Mathf.Round(damage * (.42f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.42f * condMulti), .56f) - naturalDamResist));
                         case 10: // daedric
-                            return (int)Mathf.Round(damage * (.34f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((.34f * condMulti), .46f) - naturalDamResist));
                         default:
-                            return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                            return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                     }
                 }
 			}
@@ -1773,33 +2085,41 @@ namespace PhysicalCombatAndArmorOverhaul
 		
 		private static int ShieldDamageReductionCalculation(DaggerfallUnityItem shield, int shieldMaterial, int atkStrength, int damage, bool bluntWep, int wepWeight, bool unarmedCheck, float naturalDamResist)
 		{
-			// So I want to expand on this more later on, but for right now, I think i'm just going to go with something fairly basic. That being that shields, no matter what the type will have a large damage reduction, but this reduction will increase with the material type of the shield. Like I said, want to a lot more with this, but have to think more about it and learn more about actually doing it before I wrack my head on it.
-			if (unarmedCheck)
+            float condMulti = 1f;
+
+            if (condBasedEffectModuleCheck) // Only runs if "Condition Based Effectiveness" module is active.
+            {
+                condMulti = AlterArmorReducBasedOnItemCondition(shield);
+                //Debug.LogFormat("Shield Reduction Multiplier Due To Condition = {0}", condMulti);
+            }
+
+            // So I want to expand on this more later on, but for right now, I think i'm just going to go with something fairly basic. That being that shields, no matter what the type will have a large damage reduction, but this reduction will increase with the material type of the shield. Like I said, want to a lot more with this, but have to think more about it and learn more about actually doing it before I wrack my head on it.
+            if (unarmedCheck)
 			{
                 switch (shieldMaterial)
                 {
                     case 1: // leather
-                        return (int)Mathf.Round(damage * (.59f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.59f * condMulti), .79f) - naturalDamResist));
                     case 2: // chains 1 and 2
-                        return (int)Mathf.Round(damage * (.55f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.55f * condMulti), .75f) - naturalDamResist));
                     case 3: // iron
-                        return (int)Mathf.Round(damage * (.49f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.49f * condMulti), .69f) - naturalDamResist));
                     case 4: // steel and silver
-                        return (int)Mathf.Round(damage * (.45f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.45f * condMulti), .65f) - naturalDamResist));
                     case 5: // elven
-                        return (int)Mathf.Round(damage * (.43f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.43f * condMulti), .63f) - naturalDamResist));
                     case 6: // dwarven
-                        return (int)Mathf.Round(damage * (.39f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.39f * condMulti), .59f) - naturalDamResist));
                     case 7: // mithril and adamantium
-                        return (int)Mathf.Round(damage * (.35f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.35f * condMulti), .55f) - naturalDamResist));
                     case 8: // ebony
-                        return (int)Mathf.Round(damage * (.33f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.33f * condMulti), .44f) - naturalDamResist));
                     case 9: // orcish
-                        return (int)Mathf.Round(damage * (.29f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.29f * condMulti), .37f) - naturalDamResist));
                     case 10: // daedric
-                        return (int)Mathf.Round(damage * (.25f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.25f * condMulti), .31f) - naturalDamResist));
                     default:
-                        return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                 }
             }
 			else if (bluntWep)
@@ -1807,27 +2127,27 @@ namespace PhysicalCombatAndArmorOverhaul
                 switch (shieldMaterial)
                 {
                     case 1: // leather
-                        return (int)Mathf.Round(damage * (.74f - naturalDamResist)); // Blunt does slightly more damage to shields, overall.
+                        return (int)Mathf.Round(damage * (Mathf.Min((.74f * condMulti), .84f) - naturalDamResist)); // Blunt does slightly more damage to shields, overall.
                     case 2: // chains 1 and 2
-                        return (int)Mathf.Round(damage * (.70f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.70f * condMulti), .80f) - naturalDamResist));
                     case 3: // iron
-                        return (int)Mathf.Round(damage * (.64f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.64f * condMulti), .72f) - naturalDamResist));
                     case 4: // steel and silver
-                        return (int)Mathf.Round(damage * (.58f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.58f * condMulti), .68f) - naturalDamResist));
                     case 5: // elven
-                        return (int)Mathf.Round(damage * (.54f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.54f * condMulti), .64f) - naturalDamResist));
                     case 6: // dwarven
-                        return (int)Mathf.Round(damage * (.50f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.50f * condMulti), .60f) - naturalDamResist));
                     case 7: // mithril and adamantium
-                        return (int)Mathf.Round(damage * (.46f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.46f * condMulti), .56f) - naturalDamResist));
                     case 8: // ebony
-                        return (int)Mathf.Round(damage * (.42f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.42f * condMulti), .50f) - naturalDamResist));
                     case 9: // orcish
-                        return (int)Mathf.Round(damage * (.38f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.38f * condMulti), .45f) - naturalDamResist));
                     case 10: // daedric
-                        return (int)Mathf.Round(damage * (.34f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.34f * condMulti), .39f) - naturalDamResist));
                     default:
-                        return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                 }
             }
 			else
@@ -1835,27 +2155,27 @@ namespace PhysicalCombatAndArmorOverhaul
                 switch (shieldMaterial)
                 {
                     case 1: // leather
-                        return (int)Mathf.Round(damage * (.70f - naturalDamResist)); // You get a very good damage reduction from any type of shield, it gets slightly better as the material of the shield gets better.
+                        return (int)Mathf.Round(damage * (Mathf.Min((.70f * condMulti), .80f) - naturalDamResist)); // You get a very good damage reduction from any type of shield, it gets slightly better as the material of the shield gets better.
                     case 2: // chains 1 and 2
-                        return (int)Mathf.Round(damage * (.66f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.66f * condMulti), .76f) - naturalDamResist));
                     case 3: // iron
-                        return (int)Mathf.Round(damage * (.60f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.60f * condMulti), .68f) - naturalDamResist));
                     case 4: // steel and silver
-                        return (int)Mathf.Round(damage * (.54f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.54f * condMulti), .64f) - naturalDamResist));
                     case 5: // elven
-                        return (int)Mathf.Round(damage * (.50f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.50f * condMulti), .60f) - naturalDamResist));
                     case 6: // dwarven
-                        return (int)Mathf.Round(damage * (.46f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.46f * condMulti), .56f) - naturalDamResist));
                     case 7: // mithril and adamantium
-                        return (int)Mathf.Round(damage * (.42f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.42f * condMulti), .52f) - naturalDamResist));
                     case 8: // ebony
-                        return (int)Mathf.Round(damage * (.38f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.38f * condMulti), .46f) - naturalDamResist));
                     case 9: // orcish
-                        return (int)Mathf.Round(damage * (.34f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.34f * condMulti), .41f) - naturalDamResist));
                     case 10: // daedric
-                        return (int)Mathf.Round(damage * (.30f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.30f * condMulti), .36f) - naturalDamResist));
                     default:
-                        return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                 }
             }
 		}
@@ -1863,8 +2183,7 @@ namespace PhysicalCombatAndArmorOverhaul
 		// This will be the main section of where various groups of enemies will have their 'Natural' damage reduction calculated.
 		private static int PercentageReductionCalculationForMonsters(DaggerfallEntity attacker, DaggerfallEntity target, int damage, bool bluntWep, float naturalDamResist)
 		{
-			EnemyEntity AITarget = null;
-            AITarget = target as EnemyEntity;
+            EnemyEntity AITarget = target as EnemyEntity;
 
             switch (AITarget.GetEnemyGroup())
             {
@@ -1929,9 +2248,83 @@ namespace PhysicalCombatAndArmorOverhaul
                     return (int)Mathf.Round(damage * (1f - naturalDamResist));
             }
 		}
-		
-		/// Does most of the calculations determining how much a material/piece of equipment should be taking damage from something hitting it.
-		private static int MaterialDifferenceDamageCalculation(DaggerfallUnityItem item, int matDifference, int atkStrength, int damage, bool bluntWep, int wepWeight, bool shieldCheck)
+
+        // This is where specific monsters will be given a true or false, depending on if said monster is clearly holding a type of weapon in their sprite.
+        private static bool SpecialWeaponCheckForMonsters(DaggerfallEntity attacker)
+        {
+            EnemyEntity AIAttacker = null;
+            AIAttacker = attacker as EnemyEntity;
+
+            switch (AIAttacker.CareerIndex)
+            {
+                case (int)MonsterCareers.Centaur:
+                case (int)MonsterCareers.Giant:
+                case (int)MonsterCareers.Gargoyle:
+                case (int)MonsterCareers.Orc:
+                case (int)MonsterCareers.OrcSergeant:
+                case (int)MonsterCareers.OrcShaman:
+                case (int)MonsterCareers.OrcWarlord:
+                case (int)MonsterCareers.IronAtronach:
+                case (int)MonsterCareers.IceAtronach:
+                case (int)MonsterCareers.SkeletalWarrior:
+                case (int)MonsterCareers.Wraith:
+                case (int)MonsterCareers.Lich:
+                case (int)MonsterCareers.AncientLich:
+                case (int)MonsterCareers.FrostDaedra:
+                case (int)MonsterCareers.FireDaedra:
+                case (int)MonsterCareers.Daedroth:
+                case (int)MonsterCareers.DaedraLord:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+		// This is where specific monsters will be given a pre-defined weapon object for purposes of the rest of the formula, based on their level and sprite weapon appearance.
+        private static DaggerfallUnityItem MonsterWeaponAssign(DaggerfallEntity attacker)
+        {
+            EnemyEntity AIAttacker = null;
+            AIAttacker = attacker as EnemyEntity;
+
+            switch (AIAttacker.CareerIndex)
+            {
+                case (int)MonsterCareers.SkeletalWarrior:
+                    return ItemBuilder.CreateWeapon(Weapons.War_Axe, WeaponMaterialTypes.Steel);
+                case (int)MonsterCareers.Orc:
+                    return ItemBuilder.CreateWeapon(Weapons.Saber, WeaponMaterialTypes.Steel);
+                case (int)MonsterCareers.OrcSergeant:
+                    return ItemBuilder.CreateWeapon(Weapons.Battle_Axe, WeaponMaterialTypes.Dwarven);
+                case (int)MonsterCareers.OrcWarlord:
+                case (int)MonsterCareers.Daedroth:
+                    return ItemBuilder.CreateWeapon(Weapons.Battle_Axe, WeaponMaterialTypes.Orcish);
+                case (int)MonsterCareers.OrcShaman:
+                case (int)MonsterCareers.Lich:
+                case (int)MonsterCareers.AncientLich:
+                    return ItemBuilder.CreateWeapon(Weapons.Staff, WeaponMaterialTypes.Adamantium);
+                case (int)MonsterCareers.Centaur:
+                    return ItemBuilder.CreateWeapon(Weapons.Claymore, WeaponMaterialTypes.Elven);
+                case (int)MonsterCareers.Giant:
+                    return ItemBuilder.CreateWeapon(Weapons.Warhammer, WeaponMaterialTypes.Steel);
+                case (int)MonsterCareers.Gargoyle:
+                    return ItemBuilder.CreateWeapon(Weapons.Flail, WeaponMaterialTypes.Steel);
+                case (int)MonsterCareers.IronAtronach:
+                    return ItemBuilder.CreateWeapon(Weapons.Mace, WeaponMaterialTypes.Steel);
+                case (int)MonsterCareers.IceAtronach:
+                    return ItemBuilder.CreateWeapon(Weapons.Katana, WeaponMaterialTypes.Elven);
+                case (int)MonsterCareers.Wraith:
+                    return ItemBuilder.CreateWeapon(Weapons.Saber, WeaponMaterialTypes.Mithril);
+                case (int)MonsterCareers.FrostDaedra:
+                    return ItemBuilder.CreateWeapon(Weapons.Warhammer, WeaponMaterialTypes.Daedric);
+                case (int)MonsterCareers.FireDaedra:
+                case (int)MonsterCareers.DaedraLord:
+                    return ItemBuilder.CreateWeapon(Weapons.Broadsword, WeaponMaterialTypes.Daedric);
+                default:
+                    return null;
+            }
+        }
+
+        /// Does most of the calculations determining how much a material/piece of equipment should be taking damage from something hitting it.
+        private static int MaterialDifferenceDamageCalculation(DaggerfallUnityItem item, int matDifference, int atkStrength, int damage, bool bluntWep, int wepWeight, bool shieldCheck)
 		{
 			int itemMat = item.NativeMaterialValue;
 
@@ -1941,7 +2334,7 @@ namespace PhysicalCombatAndArmorOverhaul
 					damage *= 2;
 				
 				if (itemMat == (int)ArmorMaterialTypes.Leather)
-					damage /= 2;
+					damage /= 4;
 				else if (itemMat == (int)ArmorMaterialTypes.Chain || itemMat == (int)ArmorMaterialTypes.Chain2)
 					damage *= 2;
 				
@@ -1998,7 +2391,7 @@ namespace PhysicalCombatAndArmorOverhaul
 			else
 			{
 				if (shieldCheck)
-					damage /= 2;
+					damage /= 3;
 				
 				if (itemMat == (int)ArmorMaterialTypes.Chain || itemMat == (int)ArmorMaterialTypes.Chain2)
 					damage /= 2;
@@ -2032,53 +2425,83 @@ namespace PhysicalCombatAndArmorOverhaul
 		/// Applies condition damage to an item based on physical hit damage.
         private static void ApplyConditionDamageThroughWeaponDamage(DaggerfallUnityItem item, DaggerfallEntity owner, int damage, bool bluntWep, bool shtbladeWep, bool missileWep, int wepEqualize) // Possibly add on so that magic damage also damages worn equipment.
         {
-			//Debug.LogFormat("Item Group Index is {0}", item.GroupIndex);
-			//Debug.LogFormat("Item Template Index is {0}", item.TemplateIndex);
-			
-			if (item.ItemGroup == ItemGroups.Armor) // Target gets their armor/shield condition damaged.
+            ItemCollection playerItems = GameManager.Instance.PlayerEntity.Items;
+
+            //Debug.LogFormat("Item Group Index is {0}", item.GroupIndex);
+            //Debug.LogFormat("Item Template Index is {0}", item.TemplateIndex);
+
+            if (item.ItemGroup == ItemGroups.Armor) // Target gets their armor/shield condition damaged.
             {
-                int amount = item.IsShield ? damage * 2: damage * 4;
-                item.LowerCondition(amount, owner);
-				
-				/*int percentChange = 100 * amount / item.maxCondition;
+                int amount = item.IsShield ? damage: damage * 2;
+
+                if (fadingEnchantedItemsModuleCheck) // Only runs if "Fading Enchanted Items" module is active.
+                {
+                    if (owner == GameManager.Instance.PlayerEntity && item.IsEnchanted) // If the Weapon or Armor piece is enchanted, when broken it will be Destroyed from the player inventory.
+                        item.LowerCondition(amount, owner, playerItems);
+                    else
+                        item.LowerCondition(amount, owner);
+                }
+                else
+                    item.LowerCondition(amount, owner);
+
+                /*int percentChange = 100 * amount / item.maxCondition;
                 if (owner == GameManager.Instance.PlayerEntity){
                     Debug.LogFormat("Target Had {0} Damaged by {1}, cond={2}", item.LongName, amount, item.currentCondition);
 					Debug.LogFormat("Had {0} Damaged by {1}%, of Total Maximum. There Remains {2}% of Max Cond.", item.LongName, percentChange, item.ConditionPercentage);} // Percentage Change */
             }
 			else // Attacker gets their weapon damaged, if they are using one, otherwise this method is not called.
 			{
-				int amount = (10 * damage) / 50;
-				if ((amount == 0) && Dice100.SuccessRoll(40))
-					amount = 1;
-					
-				if (missileWep)
-					amount = SpecificWeaponConditionDamage(item, amount, wepEqualize);
+                int amount = (10 * damage) / 50;
+                if ((amount == 0) && Dice100.SuccessRoll(40))
+                    amount = 1;
 
-				item.LowerCondition(amount, owner);
-				
-				/*int percentChange = 100 * amount / item.maxCondition;
-				if (owner == GameManager.Instance.PlayerEntity){
-					Debug.LogFormat("Attacker Damaged {0} by {1}, cond={2}", item.LongName, amount, item.currentCondition);
-					Debug.LogFormat("Had {0} Damaged by {1}%, of Total Maximum. There Remains {2}% of Max Cond.", item.LongName, percentChange, item.ConditionPercentage);} // Percentage Change */
-			}
+                if (missileWep)
+                    amount = SpecificWeaponConditionDamage(item, amount, wepEqualize);
+
+                if (fadingEnchantedItemsModuleCheck) // Only runs if "Fading Enchanted Items" module is active.
+                {
+                    if (owner == GameManager.Instance.PlayerEntity && item.IsEnchanted) // If the Weapon or Armor piece is enchanted, when broken it will be Destroyed from the player inventory.
+                        item.LowerCondition(amount, owner, playerItems);
+                    else
+                        item.LowerCondition(amount, owner);
+                }
+                else
+                    item.LowerCondition(amount, owner);
+
+                /*int percentChange = 100 * amount / item.maxCondition;
+                if (owner == GameManager.Instance.PlayerEntity){
+                    Debug.LogFormat("Attacker Damaged {0} by {1}, cond={2}", item.LongName, amount, item.currentCondition);
+                    Debug.LogFormat("Had {0} Damaged by {1}%, of Total Maximum. There Remains {2}% of Max Cond.", item.LongName, percentChange, item.ConditionPercentage);} // Percentage Change */
+            }
         }
 		
 		/// Applies condition damage to an item based on physical hit damage. Specifically for unarmed attacks.
         private static void ApplyConditionDamageThroughUnarmedDamage(DaggerfallUnityItem item, DaggerfallEntity owner, int damage)
         {
-			//Debug.LogFormat("Item Group Index is {0}", item.GroupIndex);
-			//Debug.LogFormat("Item Template Index is {0}", item.TemplateIndex);
-			
-			if (item.ItemGroup == ItemGroups.Armor) // Target gets their armor/shield condition damaged.
+            ItemCollection playerItems = GameManager.Instance.PlayerEntity.Items;
+
+            //Debug.LogFormat("Item Group Index is {0}", item.GroupIndex);
+            //Debug.LogFormat("Item Template Index is {0}", item.TemplateIndex);
+
+            if (item.ItemGroup == ItemGroups.Armor) // Target gets their armor/shield condition damaged.
             {
-                int amount = item.IsShield ? damage: damage * 2;
-                item.LowerCondition(amount, owner);
-				
-				/*int percentChange = 100 * amount / item.maxCondition;
+                int amount = item.IsShield ? damage / 2: damage;
+
+                if (fadingEnchantedItemsModuleCheck) // Only runs if "Fading Enchanted Items" module is active.
+                {
+                    if (owner == GameManager.Instance.PlayerEntity && item.IsEnchanted) // If the Weapon or Armor piece is enchanted, when broken it will be Destroyed from the player inventory.
+                        item.LowerCondition(amount, owner, playerItems);
+                    else
+                        item.LowerCondition(amount, owner);
+                }
+                else
+                    item.LowerCondition(amount, owner);
+
+                /*int percentChange = 100 * amount / item.maxCondition;
                 if (owner == GameManager.Instance.PlayerEntity){
                     Debug.LogFormat("Target Had {0} Damaged by {1}, cond={2}", item.LongName, amount, item.currentCondition);
 					Debug.LogFormat("Had {0} Damaged by {1}%, of Total Maximum. There Remains {2}% of Max Cond.", item.LongName, percentChange, item.ConditionPercentage);} // Percentage Change */
-			}
+            }
 		}
 		
 		/// Does a roll for based on the critical strike chance of the attacker, if this roll is successful critSuccess is returned as 'true'.
@@ -2112,6 +2535,9 @@ namespace PhysicalCombatAndArmorOverhaul
 		// Finds the material that an armor item is made from, then returns the multiplier that will be used later based on this material check.
 		private static int ArmorMaterialIdentifier (DaggerfallUnityItem armor)
         {
+            if (armor == null) // To attempt to keep object reference compile error from occuring when worn shield breaks from an attack.
+                return 1;
+
             if (!armor.IsShield)
             {
                 int itemMat = armor.GetMaterialArmorValue();
@@ -2153,44 +2579,93 @@ namespace PhysicalCombatAndArmorOverhaul
         }
 		
 		// If the player has equipment that is below a certain percentage of condition, this will check if they should be warned with a pop-up message about said piece of equipment.
-		private static void WarningMessagePlayerEquipmentCondition(DaggerfallUnityItem item)
+		private static void WarningMessagePlayerEquipmentCondition(DaggerfallUnityItem item, int startItemCondPer)
 		{
 			string roughItemMessage = "";
 			string damagedItemMessage = "";
+            string majorDamageItemMessage = "";
+            int condDiff = startItemCondPer - item.ConditionPercentage;
 			
-			if (item.ConditionPercentage <= 49)
+			if (item.ConditionPercentage <= 49 || condDiff >= 15)
 			{
-				if (item.TemplateIndex == (int)Armor.Boots || item.TemplateIndex == (int)Armor.Gauntlets || item.TemplateIndex == (int)Armor.Greaves) // Armor With Plural Names Text
-				{
-					roughItemMessage = String.Format("My {0} Are In Rough Shape", item.shortName);
-					damagedItemMessage = String.Format("My {0} Are Falling Apart", item.shortName);
-				}
-				else if (item.GetWeaponSkillIDAsShort() == 29 || item.GetWeaponSkillIDAsShort() == 28 || item.GetWeaponSkillIDAsShort() == 31) // Bladed Weapons Text
-				{
-					roughItemMessage = String.Format("My {0} Could Use A Sharpening", item.shortName);
-					damagedItemMessage = String.Format("My {0} Looks As Dull As A Butter Knife", item.shortName);
-				}
-				else if (item.GetWeaponSkillIDAsShort() == 32) // Blunt Weapoons Text
-				{
-					roughItemMessage = String.Format("My {0}'s Shaft Has Some Small Cracks", item.shortName);
-					damagedItemMessage = String.Format("My {0}'s Shaft Is Nearly Split In Two", item.shortName);
-				}
-				else if (item.GetWeaponSkillIDAsShort() == 33) // Archery Weapons Text
-				{
-					roughItemMessage = String.Format("The Bowstring On My {0} Is Losing Its Twang", item.shortName);
-					damagedItemMessage = String.Format("The Bowstring On My {0} Looks Ready To Snap", item.shortName);
-				}
-				else // Text for any other Valid Items
-				{
-					roughItemMessage = String.Format("My {0} Is In Rough Shape", item.shortName);
-					damagedItemMessage = String.Format("My {0} Is Falling Apart", item.shortName);
-				}
+                if (item.IsEnchanted) // All Magically Enchanted Items Text
+                {
+                    if (item.customMagic != null)
+                    {
+                        string shortMagicItemName = item.shortName;
+                        roughItemMessage = String.Format("My {0} Is Flickering Slightly", shortMagicItemName);
+                        damagedItemMessage = String.Format("My {0} Is Going In And Out Of Existence", shortMagicItemName);
+                        majorDamageItemMessage = String.Format("My {0} Was Drained Significantly By That", shortMagicItemName);
+                    }
+                    else
+                    {
+                        string longMagicItemName = item.LongName;
+                        roughItemMessage = String.Format("My {0} Is Flickering Slightly", longMagicItemName);
+                        damagedItemMessage = String.Format("My {0} Is Going In And Out Of Existence", longMagicItemName);
+                        majorDamageItemMessage = String.Format("My {0} Was Drained Significantly By That", longMagicItemName);
+                    }
+                }
+                else
+                {
+                    string shortItemName = item.shortName;
+                    switch (item.TemplateIndex)
+                    {
+                        case (int)Armor.Boots:
+                        case (int)Armor.Gauntlets:  // Armor With Plural Names Text
+                        case (int)Armor.Greaves:
+                        case 516:                   // RPR:I, Chausses Index Value
+                        case 519:                   // RPR:I, Sollerets Index Value
+                            roughItemMessage = String.Format("My {0} Are In Rough Shape", shortItemName);
+                            damagedItemMessage = String.Format("My {0} Are Falling Apart", shortItemName);
+                            majorDamageItemMessage = String.Format("My {0} Were Shredded Heavily By That", shortItemName);
+                            break;
+                        case (int)Weapons.Broadsword:
+                        case (int)Weapons.Claymore:
+                        case (int)Weapons.Dai_Katana:
+                        case (int)Weapons.Katana:
+                        case (int)Weapons.Longsword:
+                        case (int)Weapons.Saber:    // Bladed Weapons Text
+                        case (int)Weapons.Dagger:
+                        case (int)Weapons.Shortsword:
+                        case (int)Weapons.Tanto:
+                        case (int)Weapons.Wakazashi:
+                        case (int)Weapons.Battle_Axe:
+                        case (int)Weapons.War_Axe:
+                        case 513:                   // RPR:I, Archer's Axe Index Value
+                            roughItemMessage = String.Format("My {0} Could Use A Sharpening", shortItemName);
+                            damagedItemMessage = String.Format("My {0} Looks As Dull As A Butter Knife", shortItemName);
+                            majorDamageItemMessage = String.Format("My {0} Lost A lot Of Edge From That Swipe", shortItemName);
+                            break;
+                        case (int)Weapons.Flail:
+                        case (int)Weapons.Mace:     // Blunt Weapoons Text
+                        case (int)Weapons.Staff:
+                        case (int)Weapons.Warhammer:
+                        case 514:                   // RPR:I, Light Flail Index Value
+                            roughItemMessage = String.Format("My {0}'s Shaft Has Some Small Cracks", shortItemName);
+                            damagedItemMessage = String.Format("My {0}'s Shaft Is Nearly Split In Two", shortItemName);
+                            majorDamageItemMessage = String.Format("My {0} Shaft Was Cracked By That Swing", shortItemName);
+                            break;
+                        case (int)Weapons.Long_Bow: // Archery Weapons Text
+                        case (int)Weapons.Short_Bow:
+                            roughItemMessage = String.Format("The Bowstring On My {0} Is Losing Its Twang", shortItemName);
+                            damagedItemMessage = String.Format("The Bowstring On My {0} Looks Ready To Snap", shortItemName);
+                            majorDamageItemMessage = String.Format("The Bowstring On My {0} Nearly Snapped From That", shortItemName);
+                            break;
+                        default:                    // Text for any other Valid Items
+                            roughItemMessage = String.Format("My {0} Is In Rough Shape", shortItemName);
+                            damagedItemMessage = String.Format("My {0} Is Falling Apart", shortItemName);
+                            majorDamageItemMessage = String.Format("My {0} Was Shredded Heavily By That", shortItemName);
+                            break;
+                    }
+                }
 				
-				if (item.ConditionPercentage <= 49 && item.ConditionPercentage >= 47) // 49 & 45 // This will work for now, until I find a more elegant solution.
+				if (item.ConditionPercentage == 48) // 49 & 45 // This will work for now, until I find a more elegant solution.
 					DaggerfallUI.AddHUDText(roughItemMessage, 2.00f); // Possibly make a random between a few of these lines to mix it up or something.				
-				else if (item.ConditionPercentage <= 16 && item.ConditionPercentage >= 14) // 16 & 12
+				else if (item.ConditionPercentage == 15) // 16 & 12
 					DaggerfallUI.AddHUDText(damagedItemMessage, 2.00f);
-			}
+                else if (condDiff >= 15)
+                    DaggerfallUI.AddHUDText(majorDamageItemMessage, 2.00f);
+            }
 		}
 		
 		// Retrieves the multiplier based on the condition modifier of a material, the idea being that items will take around the same amount of damage as other items in that category.
@@ -2453,32 +2928,40 @@ namespace PhysicalCombatAndArmorOverhaul
 		// Currently being used to compare the damage reduction of a shield to the under armor it is covering. This is the average of all different types of damage reduction for simplification of this.
 		private static int PercentageReductionAverage(DaggerfallUnityItem item, int armorMaterial, int damage, float naturalDamResist, bool shieldQuickCheck)
 		{
-			if (shieldQuickCheck)
+            float condMulti = 1f;
+
+            if (condBasedEffectModuleCheck) // Only runs if "Condition Based Effectiveness" module is active.
+            {
+                condMulti = AlterArmorReducBasedOnItemCondition(item);
+                //Debug.LogFormat("Average Reduction Multiplier Due To Condition = {0}", condMulti);
+            }
+
+            if (shieldQuickCheck)
 			{
                 switch (armorMaterial)
                 {
                     case 1: // leather
-                        return (int)Mathf.Round(damage * (.68f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.68f * condMulti), .81f) - naturalDamResist));
                     case 2: // chains 1 and 2
-                        return (int)Mathf.Round(damage * (.64f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.64f * condMulti), .77f) - naturalDamResist));
                     case 3: // iron
-                        return (int)Mathf.Round(damage * (.58f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.58f * condMulti), .70f) - naturalDamResist));
                     case 4: // steel and silver
-                        return (int)Mathf.Round(damage * (.52f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.52f * condMulti), .66f) - naturalDamResist));
                     case 5: // elven
-                        return (int)Mathf.Round(damage * (.49f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.49f * condMulti), .62f) - naturalDamResist));
                     case 6: // dwarven
-                        return (int)Mathf.Round(damage * (.45f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.45f * condMulti), .61f) - naturalDamResist));
                     case 7: // mithril and adamantium
-                        return (int)Mathf.Round(damage * (.41f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.41f * condMulti), .54f) - naturalDamResist));
                     case 8: // ebony
-                        return (int)Mathf.Round(damage * (.38f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.38f * condMulti), .47f) - naturalDamResist));
                     case 9: // orcish
-                        return (int)Mathf.Round(damage * (.34f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.34f * condMulti), .41f) - naturalDamResist));
                     case 10: // daedric
-                        return (int)Mathf.Round(damage * (.30f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.30f * condMulti), .35f) - naturalDamResist));
                     default:
-                        return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                 }
 			}
 			else
@@ -2486,27 +2969,27 @@ namespace PhysicalCombatAndArmorOverhaul
                 switch (armorMaterial)
                 {
                     case 1: // leather
-                        return (int)Mathf.Round(damage * (.83f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.83f * condMulti), .93f) - naturalDamResist));
                     case 2: // chains 1 and 2
-                        return (int)Mathf.Round(damage * (.81f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.81f * condMulti), .93f) - naturalDamResist));
                     case 3: // iron
-                        return (int)Mathf.Round(damage * (.86f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.86f * condMulti), .92f) - naturalDamResist));
                     case 4: // steel and silver
-                        return (int)Mathf.Round(damage * (.78f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.78f * condMulti), .90f) - naturalDamResist));
                     case 5: // elven
-                        return (int)Mathf.Round(damage * (.73f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.73f * condMulti), .87f) - naturalDamResist));
                     case 6: // dwarven
-                        return (int)Mathf.Round(damage * (.65f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.65f * condMulti), .84f) - naturalDamResist));
                     case 7: // mithril and adamantium
-                        return (int)Mathf.Round(damage * (.58f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.58f * condMulti), .81f) - naturalDamResist));
                     case 8: // ebony
-                        return (int)Mathf.Round(damage * (.51f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.51f * condMulti), .76f) - naturalDamResist));
                     case 9: // orcish
-                        return (int)Mathf.Round(damage * (.42f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.42f * condMulti), .65f) - naturalDamResist));
                     case 10: // daedric
-                        return (int)Mathf.Round(damage * (.35f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((.35f * condMulti), .56f) - naturalDamResist));
                     default:
-                        return (int)Mathf.Round(damage * (1f - naturalDamResist));
+                        return (int)Mathf.Round(damage * (Mathf.Min((1f * condMulti), 1f) - naturalDamResist));
                 }
 			}
 		}
@@ -2549,19 +3032,72 @@ namespace PhysicalCombatAndArmorOverhaul
             }
             return damage;
         }
-		
-		static int GetBonusOrPenaltyByEnemyType(DaggerfallEntity attacker, EnemyEntity AITarget)
+
+        public static int CalculateHandToHandAttackDamage(DaggerfallEntity attacker, DaggerfallEntity target, int damageModifier, bool player)
         {
-            if (attacker == null || AITarget == null)
+            int damage = 0;
+
+            if (player)
+            {
+                int minBaseDamage = FormulaHelper.CalculateHandToHandMinDamage(attacker.Skills.GetLiveSkillValue(DFCareer.Skills.HandToHand));
+                int maxBaseDamage = FormulaHelper.CalculateHandToHandMaxDamage(attacker.Skills.GetLiveSkillValue(DFCareer.Skills.HandToHand));
+                damage = UnityEngine.Random.Range(minBaseDamage, maxBaseDamage + 1);
+
+                // Apply damage modifiers.
+                damage += damageModifier;
+
+                // Apply strength modifier for players. It is not applied in classic despite what the in-game description for the Strength attribute says.
+                damage += DamageModifier(attacker.Stats.LiveStrength);
+            }
+            else
+                damage += damageModifier;
+
+            if (damage < 1)
+                damage = 0;
+
+            if (damage >= 1)
+                damage += GetBonusOrPenaltyByEnemyType(attacker, target); // Added my own, non-overriden version of this method for modification.
+
+            return damage;
+        }
+
+        static int GetBonusOrPenaltyByEnemyType(DaggerfallEntity attacker, DaggerfallEntity target)
+        {
+            if (attacker == null || target == null) // So after observing the effects of adding large amounts of weight to an enemy, it does not seem to have that much of an effect on their ability to be stun-locked. As the knock-back/hurt state is probably the real issue here, as well as other parts of the AI choices. So I think this comes down a lot more to AI behavior than creature weight values. So with that, I will mostly likely make an entirely seperate mod to try and deal with this issue and continue on non-AI related stuff in this already large mod. So yeah, start another "proof of concept" mod project where I attempt to change the AI to make it more challenging/smarter.
                 return 0;
-            int attackerWillpMod = (int)Mathf.Round((attacker.Stats.LiveWillpower - 50) / 5);
-            int confidenceMod = Mathf.Max(10 + ((attackerWillpMod - AITarget.Level) / 2), 0);
-            int courageMod = Mathf.Max(AITarget.Level - attackerWillpMod, 0);
+
+            int attackerWillpMod = 0;
+            int confidenceMod = 0;
+            int courageMod = 0;
+            EnemyEntity AITarget = null;
+            PlayerEntity player = GameManager.Instance.PlayerEntity;
+
+            if (target != player)
+                AITarget = target as EnemyEntity;
+            else
+                player = target as PlayerEntity;
+
+            if (player == attacker) // When attacker is the player
+            {
+                attackerWillpMod = (int)Mathf.Round((attacker.Stats.LiveWillpower - 50) / 5);
+                confidenceMod = Mathf.Max(10 + attackerWillpMod - (target.Level / 2), 0);
+                courageMod = Mathf.Max((target.Level / 2) - attackerWillpMod, 0);
+
+                confidenceMod = UnityEngine.Random.Range(0, confidenceMod);
+            }
+            else // When attacker is anything other than the player // Apparently "32" is the maximum possible level cap for the player without cheating.
+            {
+                attackerWillpMod = (int)Mathf.Round((attacker.Stats.LiveWillpower - 50) / 5);
+                confidenceMod = Mathf.Max(5 + attackerWillpMod + (attacker.Level / 4), 0);
+                courageMod = Mathf.Max(target.Level - (attacker.Level + attackerWillpMod), 0);
+
+                confidenceMod = UnityEngine.Random.Range(0, confidenceMod);
+            }
 
             int damage = 0;
             // Apply bonus or penalty by opponent type.
             // In classic this is broken and only works if the attack is done with a weapon that has the maximum number of enchantments.
-            if (AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Undead)
+            if (AITarget != null && AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Undead)
             {
                 if (((int)attacker.Career.UndeadAttackModifier & (int)DFCareer.AttackModifier.Bonus) != 0)
                 {
@@ -2572,7 +3108,7 @@ namespace PhysicalCombatAndArmorOverhaul
                     damage -= courageMod;
                 }
             }
-            else if (AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Daedra)
+            else if (AITarget != null && AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Daedra)
             {
                 if (((int)attacker.Career.DaedraAttackModifier & (int)DFCareer.AttackModifier.Bonus) != 0)
                 {
@@ -2583,7 +3119,7 @@ namespace PhysicalCombatAndArmorOverhaul
                     damage -= courageMod;
                 }
             }
-            else if (AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Humanoid || AITarget.EntityType == EntityTypes.EnemyClass)
+            else if ((AITarget != null && AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Humanoid) || player == target) // Apparently human npcs already are in the humanoid career, so "|| AITarget.EntityType == EntityTypes.EnemyClass" is unneeded.
             {
                 if (((int)attacker.Career.HumanoidAttackModifier & (int)DFCareer.AttackModifier.Bonus) != 0)
                 {
@@ -2594,7 +3130,7 @@ namespace PhysicalCombatAndArmorOverhaul
                     damage -= courageMod;
                 }
             }
-            else if (AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Animals)
+            else if (AITarget != null && AITarget.GetEnemyGroup() == DFCareer.EnemyGroups.Animals)
             {
                 if (((int)attacker.Career.AnimalsAttackModifier & (int)DFCareer.AttackModifier.Bonus) != 0)
                 {
