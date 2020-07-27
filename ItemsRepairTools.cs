@@ -1,7 +1,12 @@
-// Project:         Climates & Calories mod for Daggerfall Unity (http://www.dfworkshop.net)
-// Copyright:       Copyright (C) 2020 Ralzar
+// Project:         RepairTools mod for Daggerfall Unity (http://www.dfworkshop.net)
+// Copyright:       Copyright (C) 2020 Kirk.O
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
-// Author:          Ralzar
+// Author:          Kirk.O
+// Created On: 	    6/27/2020, 4:00 PM
+// Last Edit:		7/26/2020, 8:50 PM
+// Version:			1.00
+// Special Thanks:  Hazelnut and Ralzar
+// Modifier:
 
 using UnityEngine;
 using DaggerfallWorkshop;
@@ -13,7 +18,7 @@ using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Utility.AssetInjection;
 
-namespace PhysicalCombatAndArmorOverhaul
+namespace RepairTools
 {
     /// <summary>
     /// Abstract class for all repair items common behaviour
@@ -58,8 +63,8 @@ namespace PhysicalCombatAndArmorOverhaul
                             }
                         }
                         /////////////////////////////////////////////////////////////////////
-                        AudioClip clip = PhysicalCombatAndArmorOverhaul.myMod.GetAsset<AudioClip>(PhysicalCombatAndArmorOverhaul.audioClips[0]);
-                        PhysicalCombatAndArmorOverhaul.audioSource.PlayOneShot(clip);
+                        AudioClip clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[0]);
+                        RepairTools.audioSource.PlayOneShot(clip);
                         /////////////////////////////////////////////////////////////////////
                         break;
                     case 801: // Sewing Kit
@@ -73,8 +78,8 @@ namespace PhysicalCombatAndArmorOverhaul
                             }
                         }
                         /////////////////////////////////////////////////////////////////////
-                        clip = PhysicalCombatAndArmorOverhaul.myMod.GetAsset<AudioClip>(PhysicalCombatAndArmorOverhaul.audioClips[1]);
-                        PhysicalCombatAndArmorOverhaul.audioSource.PlayOneShot(clip);
+                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[1]);
+                        RepairTools.audioSource.PlayOneShot(clip);
                         /////////////////////////////////////////////////////////////////////
                         break;
                     case 802: // Armorers Hammer
@@ -88,8 +93,8 @@ namespace PhysicalCombatAndArmorOverhaul
                             }
                         }
                         /////////////////////////////////////////////////////////////////////
-                        clip = PhysicalCombatAndArmorOverhaul.myMod.GetAsset<AudioClip>(PhysicalCombatAndArmorOverhaul.audioClips[2]);
-                        PhysicalCombatAndArmorOverhaul.audioSource.PlayOneShot(clip);
+                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[2]);
+                        RepairTools.audioSource.PlayOneShot(clip);
                         /////////////////////////////////////////////////////////////////////
                         break;
                     case 803: // Jewelers Pliers
@@ -103,8 +108,8 @@ namespace PhysicalCombatAndArmorOverhaul
                             }
                         }
                         /////////////////////////////////////////////////////////////////////
-                        clip = PhysicalCombatAndArmorOverhaul.myMod.GetAsset<AudioClip>(PhysicalCombatAndArmorOverhaul.audioClips[3]);
-                        PhysicalCombatAndArmorOverhaul.audioSource.PlayOneShot(clip);
+                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[3]);
+                        RepairTools.audioSource.PlayOneShot(clip);
                         /////////////////////////////////////////////////////////////////////
                         break;
                     case 804: // Epoxy Glue
@@ -118,8 +123,8 @@ namespace PhysicalCombatAndArmorOverhaul
                             }
                         }
                         /////////////////////////////////////////////////////////////////////
-                        clip = PhysicalCombatAndArmorOverhaul.myMod.GetAsset<AudioClip>(PhysicalCombatAndArmorOverhaul.audioClips[4]);
-                        PhysicalCombatAndArmorOverhaul.audioSource.PlayOneShot(clip);
+                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[4]);
+                        RepairTools.audioSource.PlayOneShot(clip);
                         /////////////////////////////////////////////////////////////////////
                         break;
                     default:

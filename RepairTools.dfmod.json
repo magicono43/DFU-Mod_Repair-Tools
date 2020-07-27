@@ -1,0 +1,25 @@
+{
+    "ModTitle": "RepairTools",
+    "ModVersion": "1.00",
+    "ModAuthor": "Kirk.O",
+    "ContactInfo": "kirkoliveri@gmail.com",
+    "DFUnity_Version": "0.10.25",
+    "ModDescription": "Adds Repair Items To Fix Item Condition In The Field",
+    "GUID": "968f2200-a351-4052-b9d5-4ee499a2b6bb",
+    "Files": [
+        "Assets/Game/Mods/RepairTools.cs",
+        "Assets/Game/Mods/ItemsRepairTools.cs",
+        "Assets/Game/Mods/ItemTemplates.json",
+        "Assets/Game/Mods/Example.prefab",
+        "Assets/Game/Mods/Audio/Blade Sharpen WhetStone 1.mp3",
+        "Assets/Game/Mods/Audio/Sewing Kit Repair 1.mp3",
+        "Assets/Game/Mods/Audio/Armorers Hammer Repair 1.mp3",
+        "Assets/Game/Mods/Audio/Jewelers Pliers Repair 1.mp3",
+        "Assets/Game/Mods/Audio/Epoxy Glue Repair 1.mp3",
+        "Assets/Game/Mods/Textures/800_0-0.png",
+        "Assets/Game/Mods/Textures/801_0-0.png",
+        "Assets/Game/Mods/Textures/802_0-0.png",
+        "Assets/Game/Mods/Textures/803_0-0.png",
+        "Assets/Game/Mods/Textures/804_0-0.png"
+    ]
+}
