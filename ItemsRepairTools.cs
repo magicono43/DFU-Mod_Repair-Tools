@@ -17,6 +17,7 @@ using DaggerfallWorkshop.Game.Serialization;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Utility.AssetInjection;
+using System.Collections.Generic;
 
 namespace RepairTools
 {
@@ -37,119 +38,13 @@ namespace RepairTools
         {
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             ItemCollection playerItems = GameManager.Instance.PlayerEntity.Items;
-            uint gameMinutes = DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.ToClassicDaggerfallTime();
-            uint hunger = 20;
             uint ItemID = GetItemID();
 
             if (ItemID >= 800 && ItemID <= 804)
             {
-                // 80% max for now Do the functions for limiting how much can be repaired, then after that the ACTUAL repairing of said picked item, etc. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest, with that, may also drain some stamina upon repairing an items (increasing amount based on the sort of repair done.) Ebony, Orcish, Daedric.
-                DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
-                int itemCount = playerEntity.Items.Count;
-                //validItemPicker.OnItemPicked += RepairItem_OnItemPicked;
-                
-                switch(ItemID)
-                {
-                    case 800: // Whetstone
-                        for (int i = 0; i < playerItems.Count; i++)
-                        {
-                            DaggerfallUnityItem item = playerItems.GetItem(i);
-                            int percentReduce = (int)Mathf.Floor(item.maxCondition * 0.15f); // For Testing Purposes right now.
-                            item.LowerCondition(percentReduce); // For Testing Purposes right now.
-                            if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 28 || item.GetWeaponSkillIDAsShort() == 29 || item.GetWeaponSkillIDAsShort() == 31) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
-                            {
-                                string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                                validItemPicker.ListBox.AddItem(validItemName);
-                            }
-                        }
-                        /////////////////////////////////////////////////////////////////////
-                        AudioClip clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[0]);
-                        RepairTools.audioSource.PlayOneShot(clip);
-                        /////////////////////////////////////////////////////////////////////
-                        break;
-                    case 801: // Sewing Kit
-                        for (int i = 0; i < playerItems.Count; i++)
-                        {
-                            DaggerfallUnityItem item = playerItems.GetItem(i);
-                            if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) || item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing))
-                            {
-                                string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                                validItemPicker.ListBox.AddItem(validItemName);
-                            }
-                        }
-                        /////////////////////////////////////////////////////////////////////
-                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[1]);
-                        RepairTools.audioSource.PlayOneShot(clip);
-                        /////////////////////////////////////////////////////////////////////
-                        break;
-                    case 802: // Armorers Hammer
-                        for (int i = 0; i < playerItems.Count; i++)
-                        {
-                            DaggerfallUnityItem item = playerItems.GetItem(i);
-                            if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.ItemGroup == ItemGroups.Armor) && !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) && !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2) && !(item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) && !(item.TemplateIndex <= 519 && item.TemplateIndex >= 513))
-                            {
-                                string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                                validItemPicker.ListBox.AddItem(validItemName);
-                            }
-                        }
-                        /////////////////////////////////////////////////////////////////////
-                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[2]);
-                        RepairTools.audioSource.PlayOneShot(clip);
-                        /////////////////////////////////////////////////////////////////////
-                        break;
-                    case 803: // Jewelers Pliers
-                        for (int i = 0; i < playerItems.Count; i++)
-                        {
-                            DaggerfallUnityItem item = playerItems.GetItem(i);
-                            if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.ItemGroup == ItemGroups.Armor) && (item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2 || (item.TemplateIndex <= 519 && item.TemplateIndex >= 515)) && !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23))
-                            {
-                                string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                                validItemPicker.ListBox.AddItem(validItemName);
-                            }
-                        }
-                        /////////////////////////////////////////////////////////////////////
-                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[3]);
-                        RepairTools.audioSource.PlayOneShot(clip);
-                        /////////////////////////////////////////////////////////////////////
-                        break;
-                    case 804: // Epoxy Glue
-                        for (int i = 0; i < playerItems.Count; i++)
-                        {
-                            DaggerfallUnityItem item = playerItems.GetItem(i);
-                            if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 32 || item.GetWeaponSkillIDAsShort() == 33) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
-                            {
-                                string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                                validItemPicker.ListBox.AddItem(validItemName);
-                            }
-                        }
-                        /////////////////////////////////////////////////////////////////////
-                        clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[4]);
-                        RepairTools.audioSource.PlayOneShot(clip);
-                        /////////////////////////////////////////////////////////////////////
-                        break;
-                    default:
-                        break;
-                }
-
-                if (validItemPicker.ListBox.Count <= 0)
-                    DaggerfallUI.MessageBox("You have no valid items in need of repair.");
-                else
-                    uiManager.PushWindow(validItemPicker);
-            }
-            else if (hunger >= 1)
-            {
-                if (hunger > 1 + 240)
-                {
-                    playerEntity.LastTimePlayerAteOrDrankAtTavern = gameMinutes - 240;
-                }
-                playerEntity.LastTimePlayerAteOrDrankAtTavern += 1;
-
-                collection.RemoveItem(this);
-                DaggerfallUI.MessageBox(string.Format("You eat the {0}.", shortName));
-            }
-            else
-            {
-                DaggerfallUI.MessageBox(string.Format("You are not hungry enough to eat the {0} right now.", shortName));
+                DaggerfallUnityItem toolUsedObjectRef = this;
+                MethodsRepairTools RepairMethods = new MethodsRepairTools(uiManager, uiManager.TopWindow);
+                RepairMethods.UseRepairTool(ItemID, toolUsedObjectRef);
             }
             return true;
         }
