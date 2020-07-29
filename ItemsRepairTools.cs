@@ -94,7 +94,7 @@ namespace RepairTools
         }
     }
 
-    //ItemArmorers Hammer
+    //Armorers Hammer
     public class ItemArmorersHammer : AbstractItemRepairTools
     {
         public const int templateIndex = 802;

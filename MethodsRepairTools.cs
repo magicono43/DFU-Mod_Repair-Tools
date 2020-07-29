@@ -72,7 +72,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
 
         public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToUse)
         {
-            TextFile.Token[] tokens = RepairTools.RTTextTokenHolder.ShopTextTokensNice(usedRepairToolID, toolBroke, itemToUse);
+            TextFile.Token[] tokens = RepairTools.RTTextTokenHolder.ItemRepairTextTokens(usedRepairToolID, toolBroke, itemToUse);
             DaggerfallMessageBox itemRepairedText = new DaggerfallMessageBox(DaggerfallUI.UIManager, this);
             itemRepairedText.SetTextTokens(tokens);
             itemRepairedText.ClickAnywhereToClose = true;

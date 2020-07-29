@@ -18,56 +18,53 @@ namespace RepairTools
 {
     public class RTTextTokenHolder
     {
-
-
-        public static string GetHonoric()
-        {
-            int buildQual = GameManager.Instance.PlayerEnterExit.BuildingDiscoveryData.quality;
-
-            if (GameManager.Instance.PlayerEntity.Gender == Genders.Male)
-            {
-                if (buildQual <= 7)       // 01 - 07
-                    return "%ra";
-                else if (buildQual <= 17) // 08 - 17
-                    return "sir";
-                else                      // 18 - 20
-                    return "m'lord";
-            }
-            else
-            {
-                if (buildQual <= 7)       // 01 - 07
-                    return "%ra";
-                else if (buildQual <= 17) // 08 - 17
-                    return "ma'am";
-                else                      // 18 - 20
-                    return "madam";
-            }
-        }
-
-        public static TextFile.Token[] ShopTextTokensNice(uint tokenID, bool toolBroke, DaggerfallUnityItem itemRepaired)
+        public static TextFile.Token[] ItemRepairTextTokens(uint tokenID, bool toolBroke, DaggerfallUnityItem itemRepaired)
         {
             if (toolBroke)
             {
                 switch (tokenID)
                 {
-                    case 1:
+                    case 800:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            "It's very rare to have anyone suggesting",
-                            "investing into my little shop. Tell me,",
-                            "how much were you considering?");
-                    case 17:
+                            "You sharpen your " + itemRepaired.LongName + "'s blade.",
+							"",
+                            "The Whetstone is no longer abrasive enough to sharpen with,",
+                            "you discard it.");
+                    case 801:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            "Of course, another " + offerAmount + " into the account, is that",
-                            "correct? If so, just cross that number out and sign...",
-                            "There, and there, will that be all for now?");
-                    case 21:
+                            "You sew together cuts and loose seams in your " + itemRepaired.LongName + ".",
+                            "",
+                            "The Sewing Kit spool has ran out of thread,",
+                            "you throw it away.");
+                    case 802:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            offerAmount + " more you say? Very good " + GetHonoric() + ", i'll",
+                            "You flatten and reshape dings and dents in your " + itemRepaired.LongName + ".",
+                            "",
+                            "The Armorers Hammer handle snaps near the sledge, useless now,",
+                            "you toss it to your side.");
+                    case 803:
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                            TextFile.Formatting.JustifyCenter,
+                            "You bend together broken links and close gaps in your " + itemRepaired.LongName + ".",
+                            "",
+                            "The Jewelers Pliers break off at the pivot point, useless now,",
+                            "you discard them");
+                    case 804:
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                            TextFile.Formatting.JustifyCenter,
+                            "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.",
+                            "",
+                            "The Epoxy Glue bottle has run out of liquid,",
+                            "you throw the empty container away.");
+                    case 805:
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens( // 805 is going to be for the magic item repair powder.
+                            TextFile.Formatting.JustifyCenter,
+                            " more you say? Very good, i'll",
                             "be sure to take that into consideration when the next trade caravan",
-                            "is scheduled to come by. Will that be all for today " + GetHonoric() + "?");
+                            "is scheduled to come by. Will that be all for today?");
                     default:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
@@ -78,24 +75,32 @@ namespace RepairTools
             {
                 switch (tokenID)
                 {
-                    case 1:
+                    case 800:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            "It's very rare to have anyone suggesting",
-                            "investing into my little shop. Tell me,",
-                            "how much were you considering?");
-                    case 17:
+                            "You sharpen your " + itemRepaired.LongName + "'s blade.");
+                    case 801:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            "Of course, another " + offerAmount + " into the account, is that",
-                            "correct? If so, just cross that number out and sign...",
-                            "There, and there, will that be all for now?");
-                    case 21:
+                            "You sew together cuts and loose seams in your " + itemRepaired.LongName);
+                    case 802:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            offerAmount + " more you say? Very good " + GetHonoric() + ", i'll",
+                            "You flatten and reshape dings and dents in your " + itemRepaired.LongName + ".");
+                    case 803:
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                            TextFile.Formatting.JustifyCenter,
+                            "You bend together broken links and close gaps in your " + itemRepaired.LongName + ".");
+                    case 804:
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                            TextFile.Formatting.JustifyCenter,
+                            "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.");
+                    case 805:
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens( // 805 is going to be for the magic item repair powder.
+                            TextFile.Formatting.JustifyCenter,
+                            " more you say? Very gooi'll",
                             "be sure to take that into consideration when the next trade caravan",
-                            "is scheduled to come by. Will that be all for today " + GetHonoric() + "?");
+                            "is scheduled to come by. Will that be all for today ?");
                     default:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
