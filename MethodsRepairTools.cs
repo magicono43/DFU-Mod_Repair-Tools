@@ -67,7 +67,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
             ShowCustomTextBox(toolBroke, itemToUse); // Shows the specific text-box after repairing an item.
 
             repairTool.LowerCondition(repairToolDurLoss, playerEntity, playerItems);
-            playerEntity.DecreaseFatigue(staminaDrainValue); // Reduce player current stamina value from the action of repairing.
+            playerEntity.DecreaseFatigue(staminaDrainValue, true); // Reduce player current stamina value from the action of repairing.
         }
 
         public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToUse)
@@ -81,9 +81,9 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
 
         public void UseRepairTool(uint UsedItemID, DaggerfallUnityItem repairToolObj)
         {
-            if (GameManager.Instance.AreEnemiesNearby())
+            if (!GameManager.Instance.AreEnemiesNearby())
             {
-                if (playerEntity.CurrentFatigue <= 20)
+                if (!(playerEntity.CurrentFatigue <= (20 * 64)))
                 {
                     // Remember to test and change rarity of some items, especially if I make a magic item recharging item. 80% max for now Do the functions for limiting how much can be repaired, etc. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest. Ebony, Orcish, Daedric.
                     DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
