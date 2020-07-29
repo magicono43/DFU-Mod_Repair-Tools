@@ -34,6 +34,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
     {
         public static int repairPercentageValue { get; set; }
         public static int repairToolDurLoss { get; set; }
+        public static int staminaDrainValue { get; set; }
         public static uint usedRepairToolID { get; set; }
         public static DaggerfallUnityItem repairTool { get; set; }
 
@@ -66,8 +67,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
             ShowCustomTextBox(toolBroke, itemToUse); // Shows the specific text-box after repairing an item.
 
             repairTool.LowerCondition(repairToolDurLoss, playerEntity, playerItems);
-
-            // Good idea, combine the text-boxes into one when a repair tool breaks after a repair, instead of seperate ones. Guess work on the message box that will likely pop-up after repairing an item and closing the list view window. ## Also remember to remove condition/damage tool used to repair with.
+            playerEntity.DecreaseFatigue(staminaDrainValue); // Reduce player current stamina value from the action of repairing.
         }
 
         public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToUse)
@@ -81,117 +81,137 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
 
         public void UseRepairTool(uint UsedItemID, DaggerfallUnityItem repairToolObj)
         {
-            // Remember to test and change rarity of some items, especially if I make a magic item recharging item. 80% max for now Do the functions for limiting how much can be repaired, then after that the ACTUAL repairing of said picked item, etc. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest, with that, may also drain some stamina upon repairing an items (increasing amount based on the sort of repair done.) Ebony, Orcish, Daedric.
-            DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
-            validRepairItems.Clear(); // Clears the item object list after every repair tool use.
-            int itemCount = playerEntity.Items.Count;
-            repairTool = repairToolObj; // Sets the item object for the repair tool used for use later, mainly doing condition damage to it.
-            usedRepairToolID = UsedItemID; // Sets the item ID for the repair tool used for use later.
-            int luckMod = (int)Mathf.Round((playerEntity.Stats.LiveLuck - 50f) / 10);
-            validItemPicker.OnItemPicked += RepairItem_OnItemPicked;
-
-            switch (UsedItemID)
+            if (GameManager.Instance.AreEnemiesNearby())
             {
-                case 800: // Whetstone
-                    for (int i = 0; i < playerItems.Count; i++)
-                    {
-                        DaggerfallUnityItem item = playerItems.GetItem(i);
-                        int percentReduce = (int)Mathf.Floor(item.maxCondition * 0.15f); // For Testing Purposes right now.
-                        item.LowerCondition(percentReduce); // For Testing Purposes right now.
-                        if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 28 || item.GetWeaponSkillIDAsShort() == 29 || item.GetWeaponSkillIDAsShort() == 31) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
-                        {
-                            validRepairItems.Add(item);
-                            string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                            validItemPicker.ListBox.AddItem(validItemName);
-                        }
-                    }
-                    repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 13 + luckMod);
-                    repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
-                    /////////////////////////////////////////////////////////////////////
-                    AudioClip clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[0]);
-                    RepairTools.RepairTools.audioSource.PlayOneShot(clip);
-                    /////////////////////////////////////////////////////////////////////
-                    break;
-                case 801: // Sewing Kit
-                    for (int i = 0; i < playerItems.Count; i++)
-                    {
-                        DaggerfallUnityItem item = playerItems.GetItem(i);
-                        if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) || item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing))
-                        {
-                            validRepairItems.Add(item);
-                            string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                            validItemPicker.ListBox.AddItem(validItemName);
-                        }
-                    }
-                    repairPercentageValue = UnityEngine.Random.Range(10 + luckMod, 19 + luckMod);
-                    repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
-                    /////////////////////////////////////////////////////////////////////
-                    clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[1]);
-                    RepairTools.RepairTools.audioSource.PlayOneShot(clip);
-                    /////////////////////////////////////////////////////////////////////
-                    break;
-                case 802: // Armorers Hammer
-                    for (int i = 0; i < playerItems.Count; i++)
-                    {
-                        DaggerfallUnityItem item = playerItems.GetItem(i);
-                        if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.ItemGroup == ItemGroups.Armor) && !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) && !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2) && !(item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) && !(item.TemplateIndex <= 519 && item.TemplateIndex >= 513))
-                        {
-                            validRepairItems.Add(item);
-                            string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                            validItemPicker.ListBox.AddItem(validItemName);
-                        }
-                    }
-                    repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 11 + luckMod);
-                    repairToolDurLoss = 15; // Might add a random element to this condition damage as well, not sure.
-                    /////////////////////////////////////////////////////////////////////
-                    clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[2]);
-                    RepairTools.RepairTools.audioSource.PlayOneShot(clip);
-                    /////////////////////////////////////////////////////////////////////
-                    break;
-                case 803: // Jewelers Pliers
-                    for (int i = 0; i < playerItems.Count; i++)
-                    {
-                        DaggerfallUnityItem item = playerItems.GetItem(i);
-                        if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.ItemGroup == ItemGroups.Armor) && (item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2 || (item.TemplateIndex <= 519 && item.TemplateIndex >= 515)) && !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23))
-                        {
-                            validRepairItems.Add(item);
-                            string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                            validItemPicker.ListBox.AddItem(validItemName);
-                        }
-                    }
-                    repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 11 + luckMod);
-                    repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
-                    /////////////////////////////////////////////////////////////////////
-                    clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[3]);
-                    RepairTools.RepairTools.audioSource.PlayOneShot(clip);
-                    /////////////////////////////////////////////////////////////////////
-                    break;
-                case 804: // Epoxy Glue
-                    for (int i = 0; i < playerItems.Count; i++)
-                    {
-                        DaggerfallUnityItem item = playerItems.GetItem(i);
-                        if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 32 || item.GetWeaponSkillIDAsShort() == 33) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
-                        {
-                            validRepairItems.Add(item);
-                            string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
-                            validItemPicker.ListBox.AddItem(validItemName);
-                        }
-                    }
-                    repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 10 + luckMod);
-                    repairToolDurLoss = 5; // Might add a random element to this condition damage as well, not sure.
-                    /////////////////////////////////////////////////////////////////////
-                    clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[4]);
-                    RepairTools.RepairTools.audioSource.PlayOneShot(clip);
-                    /////////////////////////////////////////////////////////////////////
-                    break;
-                default:
-                    break;
-            }
+                if (playerEntity.CurrentFatigue <= 20)
+                {
+                    // Remember to test and change rarity of some items, especially if I make a magic item recharging item. 80% max for now Do the functions for limiting how much can be repaired, etc. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest. Ebony, Orcish, Daedric.
+                    DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
+                    validRepairItems.Clear(); // Clears the item object list after every repair tool use.
+                    int itemCount = playerEntity.Items.Count;
+                    repairTool = repairToolObj; // Sets the item object for the repair tool used for use later, mainly doing condition damage to it.
+                    usedRepairToolID = UsedItemID; // Sets the item ID for the repair tool used for use later.
+                    int luckMod = (int)Mathf.Round((playerEntity.Stats.LiveLuck - 50f) / 10);
+                    int endurMod = (int)Mathf.Round((playerEntity.Stats.LiveEndurance - 50f) / 10);
+                    validItemPicker.OnItemPicked += RepairItem_OnItemPicked;
 
-            if (validItemPicker.ListBox.Count <= 0)
-                DaggerfallUI.MessageBox("You have no valid items in need of repair.");
+                    switch (UsedItemID)
+                    {
+                        case 800: // Whetstone
+                            for (int i = 0; i < playerItems.Count; i++)
+                            {
+                                DaggerfallUnityItem item = playerItems.GetItem(i);
+                                int percentReduce = (int)Mathf.Floor(item.maxCondition * 0.15f); // For Testing Purposes right now.
+                                item.LowerCondition(percentReduce); // For Testing Purposes right now.
+                                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 28 || item.GetWeaponSkillIDAsShort() == 29 || item.GetWeaponSkillIDAsShort() == 31) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
+                                {
+                                    validRepairItems.Add(item);
+                                    string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
+                                    validItemPicker.ListBox.AddItem(validItemName);
+                                }
+                            }
+                            repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 13 + luckMod);
+                            repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
+                            staminaDrainValue = 7 - endurMod;
+                            /////////////////////////////////////////////////////////////////////
+                            AudioClip clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[0]);
+                            RepairTools.RepairTools.audioSource.PlayOneShot(clip);
+                            /////////////////////////////////////////////////////////////////////
+                            break;
+                        case 801: // Sewing Kit
+                            for (int i = 0; i < playerItems.Count; i++)
+                            {
+                                DaggerfallUnityItem item = playerItems.GetItem(i);
+                                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) || item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing))
+                                {
+                                    validRepairItems.Add(item);
+                                    string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
+                                    validItemPicker.ListBox.AddItem(validItemName);
+                                }
+                            }
+                            repairPercentageValue = UnityEngine.Random.Range(10 + luckMod, 19 + luckMod);
+                            repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
+                            staminaDrainValue = 2;
+                            /////////////////////////////////////////////////////////////////////
+                            clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[1]);
+                            RepairTools.RepairTools.audioSource.PlayOneShot(clip);
+                            /////////////////////////////////////////////////////////////////////
+                            break;
+                        case 802: // Armorers Hammer
+                            for (int i = 0; i < playerItems.Count; i++)
+                            {
+                                DaggerfallUnityItem item = playerItems.GetItem(i);
+                                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.ItemGroup == ItemGroups.Armor) && !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) && !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2) && !(item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) && !(item.TemplateIndex <= 519 && item.TemplateIndex >= 513))
+                                {
+                                    validRepairItems.Add(item);
+                                    string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
+                                    validItemPicker.ListBox.AddItem(validItemName);
+                                }
+                            }
+                            repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 11 + luckMod);
+                            repairToolDurLoss = 15; // Might add a random element to this condition damage as well, not sure.
+                            staminaDrainValue = 12 - endurMod;
+                            /////////////////////////////////////////////////////////////////////
+                            clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[2]);
+                            RepairTools.RepairTools.audioSource.PlayOneShot(clip);
+                            /////////////////////////////////////////////////////////////////////
+                            break;
+                        case 803: // Jewelers Pliers
+                            for (int i = 0; i < playerItems.Count; i++)
+                            {
+                                DaggerfallUnityItem item = playerItems.GetItem(i);
+                                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.Weapons || item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.ItemGroup == ItemGroups.Armor) && (item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2 || (item.TemplateIndex <= 519 && item.TemplateIndex >= 515)) && !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23))
+                                {
+                                    validRepairItems.Add(item);
+                                    string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
+                                    validItemPicker.ListBox.AddItem(validItemName);
+                                }
+                            }
+                            repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 11 + luckMod);
+                            repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
+                            staminaDrainValue = 9 - endurMod;
+                            /////////////////////////////////////////////////////////////////////
+                            clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[3]);
+                            RepairTools.RepairTools.audioSource.PlayOneShot(clip);
+                            /////////////////////////////////////////////////////////////////////
+                            break;
+                        case 804: // Epoxy Glue
+                            for (int i = 0; i < playerItems.Count; i++)
+                            {
+                                DaggerfallUnityItem item = playerItems.GetItem(i);
+                                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 32 || item.GetWeaponSkillIDAsShort() == 33) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
+                                {
+                                    validRepairItems.Add(item);
+                                    string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
+                                    validItemPicker.ListBox.AddItem(validItemName);
+                                }
+                            }
+                            repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 10 + luckMod);
+                            repairToolDurLoss = 5; // Might add a random element to this condition damage as well, not sure.
+                            staminaDrainValue = 7 - endurMod;
+                            /////////////////////////////////////////////////////////////////////
+                            clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[4]);
+                            RepairTools.RepairTools.audioSource.PlayOneShot(clip);
+                            /////////////////////////////////////////////////////////////////////
+                            break;
+                        default:
+                            return;
+                    }
+
+                    if (validItemPicker.ListBox.Count <= 0)
+                        DaggerfallUI.MessageBox("You have no valid items in need of repair.");
+                    else
+                        uiManager.PushWindow(validItemPicker);
+                }
+                else
+                {
+                    DaggerfallUI.MessageBox("You are too exhausted to do that.");
+                }
+            }
             else
-                uiManager.PushWindow(validItemPicker);
+            {
+                DaggerfallUI.MessageBox("Can't use that with enemies around.");
+            }
         }
     }
 }
