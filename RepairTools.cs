@@ -44,7 +44,8 @@ namespace RepairTools
             "Sewing Kit Repair 1.mp3",
             "Armorers Hammer Repair 1.mp3",
             "Jewelers Pliers Repair 1.mp3",
-            "Epoxy Glue Repair 1.mp3"
+            "Epoxy Glue Repair 1.mp3",
+            "Charging Powder Repair 1.mp3"
         };
 
         void Start()
@@ -73,6 +74,7 @@ namespace RepairTools
             itemHelper.RegisterCustomItem(ItemArmorersHammer.templateIndex, ItemGroups.UselessItems2, typeof(ItemArmorersHammer));
             itemHelper.RegisterCustomItem(ItemJewelersPliers.templateIndex, ItemGroups.UselessItems2, typeof(ItemJewelersPliers));
             itemHelper.RegisterCustomItem(ItemEpoxyGlue.templateIndex, ItemGroups.UselessItems2, typeof(ItemEpoxyGlue));
+            itemHelper.RegisterCustomItem(ItemChargingPowder.templateIndex, ItemGroups.UselessItems2, typeof(ItemChargingPowder));
         }
 
         [Invoke(StateManager.StateTypes.Game)]

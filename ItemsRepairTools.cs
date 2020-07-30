@@ -40,7 +40,7 @@ namespace RepairTools
             ItemCollection playerItems = GameManager.Instance.PlayerEntity.Items;
             uint ItemID = GetItemID();
 
-            if (ItemID >= 800 && ItemID <= 804)
+            if (ItemID >= 800 && ItemID <= 805)
             {
                 DaggerfallUnityItem toolUsedObjectRef = this;
                 MethodsRepairTools RepairMethods = new MethodsRepairTools(uiManager, uiManager.TopWindow);
@@ -156,6 +156,28 @@ namespace RepairTools
         {
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemEpoxyGlue).ToString();
+            return data;
+        }
+    }
+
+    //Charging Powder
+    public class ItemChargingPowder : AbstractItemRepairTools
+    {
+        public const int templateIndex = 805;
+
+        public ItemChargingPowder() : base(ItemGroups.UselessItems2, templateIndex)
+        {
+        }
+
+        public override uint GetItemID()
+        {
+            return 805;
+        }
+
+        public override ItemData_v1 GetSaveData()
+        {
+            ItemData_v1 data = base.GetSaveData();
+            data.className = typeof(ItemChargingPowder).ToString();
             return data;
         }
     }

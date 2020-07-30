@@ -98,5 +98,25 @@
         "worldTextureRecord": 0,
         "playerTextureArchive": 0,
         "playerTextureRecord": 0
+    },
+	{
+        "index": 805,
+        "name": "Charging Powder",
+        "baseWeight": 0.3,
+        "hitPoints": 75,
+        "capacityOrTarget": 0,
+        "basePrice": 40,
+        "enchantmentPoints": 0,
+        "rarity": 1,
+        "variants": 0,
+        "drawOrderOrEffect": 0,
+        "isBluntWeapon": false,
+        "isLiquid": false,
+        "isOneHanded": false,
+        "isIngredient": false,
+        "worldTextureArchive": 805,
+        "worldTextureRecord": 0,
+        "playerTextureArchive": 0,
+        "playerTextureRecord": 0
     }
 ]

@@ -16,10 +16,12 @@
         "Assets/Game/Mods/Audio/Armorers Hammer Repair 1.mp3",
         "Assets/Game/Mods/Audio/Jewelers Pliers Repair 1.mp3",
         "Assets/Game/Mods/Audio/Epoxy Glue Repair 1.mp3",
+        "Assets/Game/Mods/Audio/Charging Powder Repair 1.mp3",
         "Assets/Game/Mods/Textures/800_0-0.png",
         "Assets/Game/Mods/Textures/801_0-0.png",
         "Assets/Game/Mods/Textures/802_0-0.png",
         "Assets/Game/Mods/Textures/803_0-0.png",
-        "Assets/Game/Mods/Textures/804_0-0.png"
+        "Assets/Game/Mods/Textures/804_0-0.png",
+        "Assets/Game/Mods/Textures/805_0-0.png"
     ]
 }

@@ -85,7 +85,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
             {
                 if (!(playerEntity.CurrentFatigue <= (20 * 64)))
                 {
-                    // Remember to test and change rarity of some items, especially if I make a magic item recharging item. 80% max for now Do the functions for limiting how much can be repaired, etc. Also, probably make it so you can't repair items while enemies are nearby, just like you can't rest. Ebony, Orcish, Daedric.
+                    // Remember to test and change rarity of some items, especially if I make a magic item recharging item. Ebony, Orcish, Daedric.
                     DaggerfallListPickerWindow validItemPicker = new DaggerfallListPickerWindow(uiManager, uiManager.TopWindow);
                     validRepairItems.Clear(); // Clears the item object list after every repair tool use.
                     int itemCount = playerEntity.Items.Count;
@@ -111,7 +111,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
                                 }
                             }
                             repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 13 + luckMod);
-                            repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
+                            repairToolDurLoss = 10;
                             staminaDrainValue = 7 - endurMod;
                             /////////////////////////////////////////////////////////////////////
                             AudioClip clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[0]);
@@ -130,7 +130,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
                                 }
                             }
                             repairPercentageValue = UnityEngine.Random.Range(10 + luckMod, 19 + luckMod);
-                            repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
+                            repairToolDurLoss = 10;
                             staminaDrainValue = 2;
                             /////////////////////////////////////////////////////////////////////
                             clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[1]);
@@ -149,7 +149,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
                                 }
                             }
                             repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 11 + luckMod);
-                            repairToolDurLoss = 15; // Might add a random element to this condition damage as well, not sure.
+                            repairToolDurLoss = 15;
                             staminaDrainValue = 12 - endurMod;
                             /////////////////////////////////////////////////////////////////////
                             clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[2]);
@@ -168,7 +168,7 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
                                 }
                             }
                             repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 11 + luckMod);
-                            repairToolDurLoss = 10; // Might add a random element to this condition damage as well, not sure.
+                            repairToolDurLoss = 10;
                             staminaDrainValue = 9 - endurMod;
                             /////////////////////////////////////////////////////////////////////
                             clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[3]);
@@ -187,10 +187,29 @@ namespace DaggerfallWorkshop.Game.UserInterfaceWindows
                                 }
                             }
                             repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 10 + luckMod);
-                            repairToolDurLoss = 5; // Might add a random element to this condition damage as well, not sure.
+                            repairToolDurLoss = 5;
                             staminaDrainValue = 7 - endurMod;
                             /////////////////////////////////////////////////////////////////////
                             clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[4]);
+                            RepairTools.RepairTools.audioSource.PlayOneShot(clip);
+                            /////////////////////////////////////////////////////////////////////
+                            break;
+                        case 805: // Charging Powder
+                            for (int i = 0; i < playerItems.Count; i++)
+                            {
+                                DaggerfallUnityItem item = playerItems.GetItem(i);
+                                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && !(item.ItemGroup == ItemGroups.MagicItems || item.ItemGroup == ItemGroups.Artifacts) && (item.GetWeaponSkillIDAsShort() == 32 || item.GetWeaponSkillIDAsShort() == 33) && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7))
+                                {
+                                    validRepairItems.Add(item);
+                                    string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
+                                    validItemPicker.ListBox.AddItem(validItemName);
+                                }
+                            }
+                            repairPercentageValue = UnityEngine.Random.Range(7 + luckMod, 10 + luckMod);
+                            repairToolDurLoss = 5;
+                            staminaDrainValue = 7 - endurMod;
+                            /////////////////////////////////////////////////////////////////////
+                            clip = RepairTools.RepairTools.myMod.GetAsset<AudioClip>(RepairTools.RepairTools.audioClips[5]);
                             RepairTools.RepairTools.audioSource.PlayOneShot(clip);
                             /////////////////////////////////////////////////////////////////////
                             break;
