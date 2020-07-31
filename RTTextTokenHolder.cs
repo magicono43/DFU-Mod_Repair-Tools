@@ -3,13 +3,11 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		7/26/2020, 8:50 PM
+// Last Edit:		7/30/2020, 3:00 PM
 // Version:			1.00
 // Special Thanks:  Hazelnut and Ralzar
 // Modifier:
 
-using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop;
 using DaggerfallConnect.Arena2;
 using DaggerfallWorkshop.Game.Items;
@@ -60,11 +58,12 @@ namespace RepairTools
                             "The Epoxy Glue bottle has run out of liquid,",
                             "you throw the empty container away.");
                     case 805:
-                        return DaggerfallUnity.Instance.TextProvider.CreateTokens( // 805 is going to be for the magic item repair powder.
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            " more you say? Very good, i'll",
-                            "be sure to take that into consideration when the next trade caravan",
-                            "is scheduled to come by. Will that be all for today?");
+                            "You sprinkle the strange powder on your " + itemRepaired.LongName + ". It surges with energy.",
+                            "",
+                            "The Charging Powder bag has gone empty,",
+                            "you toss the empty container away");
                     default:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
@@ -96,11 +95,9 @@ namespace RepairTools
                             TextFile.Formatting.JustifyCenter,
                             "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.");
                     case 805:
-                        return DaggerfallUnity.Instance.TextProvider.CreateTokens( // 805 is going to be for the magic item repair powder.
+                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
-                            " more you say? Very gooi'll",
-                            "be sure to take that into consideration when the next trade caravan",
-                            "is scheduled to come by. Will that be all for today ?");
+                            "You sprinkle the strange powder on your " + itemRepaired.LongName + ". It surges with energy.");
                     default:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,

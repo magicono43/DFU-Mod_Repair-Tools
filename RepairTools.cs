@@ -3,26 +3,16 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		7/26/2020, 8:50 PM
+// Last Edit:		7/30/2020, 3:00 PM
 // Version:			1.00
 // Special Thanks:  Hazelnut and Ralzar
 // Modifier:		
 
-using DaggerfallConnect;
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Formulas;
-using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
-using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
-using DaggerfallWorkshop.Game.Utility;
-using DaggerfallWorkshop.Utility;
-using DaggerfallWorkshop.Game.UserInterfaceWindows;
-using DaggerfallWorkshop.Game.MagicAndEffects;
-using DaggerfallWorkshop.Game.MagicAndEffects.MagicEffects;
 using UnityEngine;
-using System;
 using System.Collections.Generic;
 
 namespace RepairTools

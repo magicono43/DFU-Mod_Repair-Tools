@@ -22,6 +22,8 @@
         "Assets/Game/Mods/Textures/802_0-0.png",
         "Assets/Game/Mods/Textures/803_0-0.png",
         "Assets/Game/Mods/Textures/804_0-0.png",
-        "Assets/Game/Mods/Textures/805_0-0.png"
+        "Assets/Game/Mods/Textures/805_0-0.png",
+        "Assets/Game/Mods/RTTextTokenHolder.cs",
+        "Assets/Game/Mods/MethodsRepairTools.cs"
     ]
 }
