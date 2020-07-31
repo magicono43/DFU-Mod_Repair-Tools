@@ -8,46 +8,19 @@
 // Special Thanks:  Hazelnut and Ralzar
 // Modifier:
 
-using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Entity;
+using UnityEngine;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.Serialization;
-using DaggerfallWorkshop.Game.UserInterface;
-using DaggerfallWorkshop.Game.UserInterfaceWindows;
+using DaggerfallConnect;
 
 namespace RepairTools
 {
-    /// <summary>
-    /// Abstract class for all repair items common behaviour
-    /// </summary>
-    public abstract class AbstractItemRepairTools : DaggerfallUnityItem
-    {
-        UserInterfaceManager uiManager = DaggerfallUI.Instance.UserInterfaceManager;
-
-        public AbstractItemRepairTools(ItemGroups itemGroup, int templateIndex) : base(itemGroup, templateIndex)
-        {
-        }
-
-        public abstract uint GetItemID();
-
-        public override bool UseItem(ItemCollection collection)
-        {
-            uint ItemID = GetItemID();
-
-            if (ItemID >= 800 && ItemID <= 805)
-            {
-                DaggerfallUnityItem toolUsedObjectRef = this;
-                MethodsRepairTools RepairMethods = new MethodsRepairTools(uiManager, uiManager.TopWindow);
-                RepairMethods.UseRepairTool(collection, ItemID, toolUsedObjectRef);
-            }
-            return true;
-        }
-    }
-
     //Whetstone
     public class ItemWhetstone : AbstractItemRepairTools
     {
         public const int templateIndex = 800;
+
+        public override int DurabilityLoss => 10;
 
         public ItemWhetstone() : base(ItemGroups.UselessItems2, templateIndex)
         {
@@ -55,7 +28,7 @@ namespace RepairTools
 
         public override uint GetItemID()
         {
-            return 800;
+            return templateIndex;
         }
 
         public override ItemData_v1 GetSaveData()
@@ -63,6 +36,23 @@ namespace RepairTools
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemWhetstone).ToString();
             return data;
+        }
+
+        public override bool IsValidForRepair(DaggerfallUnityItem item)
+        {
+            DFCareer.Skills skill = item.GetWeaponSkillID();
+            return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
+                (skill == DFCareer.Skills.ShortBlade || skill == DFCareer.Skills.LongBlade || skill == DFCareer.Skills.Axe);
+        }
+
+        public override int GetRepairPercentage(int luckMod)
+        {
+            return Random.Range(7 + luckMod, 13 + luckMod);
+        }
+
+        public override int GetStaminaDrain(int endurMod)
+        {
+            return 7 - endurMod;
         }
     }
 
@@ -77,7 +67,7 @@ namespace RepairTools
 
         public override uint GetItemID()
         {
-            return 801;
+            return templateIndex;
         }
 
         public override ItemData_v1 GetSaveData()
@@ -85,6 +75,25 @@ namespace RepairTools
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemSewingKit).ToString();
             return data;
+        }
+
+        public override int DurabilityLoss => 10;
+
+        public override bool IsValidForRepair(DaggerfallUnityItem item)
+        {
+            return !item.IsEnchanted && !item.IsArtifact &&
+                ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) ||
+                item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing);
+        }
+
+        public override int GetRepairPercentage(int luckMod)
+        {
+            return Random.Range(10 + luckMod, 19 + luckMod);
+        }
+
+        public override int GetStaminaDrain(int endurMod)
+        {
+            return 2;
         }
     }
 
@@ -99,7 +108,7 @@ namespace RepairTools
 
         public override uint GetItemID()
         {
-            return 802;
+            return templateIndex;
         }
 
         public override ItemData_v1 GetSaveData()
@@ -107,6 +116,23 @@ namespace RepairTools
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemArmorersHammer).ToString();
             return data;
+        }
+
+        public override int DurabilityLoss => 15;
+
+        public override bool IsValidForRepair(DaggerfallUnityItem item)
+        {
+            return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Iron;
+        }
+
+        public override int GetRepairPercentage(int luckMod)
+        {
+            return Random.Range(7 + luckMod, 11 + luckMod);
+        }
+
+        public override int GetStaminaDrain(int endurMod)
+        {
+            return 12 - endurMod;
         }
     }
 
@@ -121,7 +147,7 @@ namespace RepairTools
 
         public override uint GetItemID()
         {
-            return 803;
+            return templateIndex;
         }
 
         public override ItemData_v1 GetSaveData()
@@ -129,6 +155,25 @@ namespace RepairTools
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemJewelersPliers).ToString();
             return data;
+        }
+
+        public override int DurabilityLoss => 10;
+
+        public override bool IsValidForRepair(DaggerfallUnityItem item)
+        {
+            // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
+            return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor &&
+                item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain && item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100;
+        }
+
+        public override int GetRepairPercentage(int luckMod)
+        {
+            return Random.Range(7 + luckMod, 11 + luckMod);
+        }
+
+        public override int GetStaminaDrain(int endurMod)
+        {
+            return 9 - endurMod;
         }
     }
 
@@ -143,7 +188,7 @@ namespace RepairTools
 
         public override uint GetItemID()
         {
-            return 804;
+            return templateIndex;
         }
 
         public override ItemData_v1 GetSaveData()
@@ -151,6 +196,25 @@ namespace RepairTools
             ItemData_v1 data = base.GetSaveData();
             data.className = typeof(ItemEpoxyGlue).ToString();
             return data;
+        }
+
+        public override int DurabilityLoss => 5;
+
+        public override bool IsValidForRepair(DaggerfallUnityItem item)
+        {
+            DFCareer.Skills skill = item.GetWeaponSkillID();
+            return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
+                (skill == DFCareer.Skills.BluntWeapon || skill == DFCareer.Skills.Archery);
+        }
+
+        public override int GetRepairPercentage(int luckMod)
+        {
+            return Random.Range(7 + luckMod, 10 + luckMod);
+        }
+
+        public override int GetStaminaDrain(int endurMod)
+        {
+            return 7 - endurMod;
         }
     }
 
@@ -165,7 +229,7 @@ namespace RepairTools
 
         public override uint GetItemID()
         {
-            return 805;
+            return templateIndex;
         }
 
         public override ItemData_v1 GetSaveData()
@@ -174,6 +238,72 @@ namespace RepairTools
             data.className = typeof(ItemChargingPowder).ToString();
             return data;
         }
+
+        public override int DurabilityLoss => 10;
+
+        public override bool IsValidForRepair(DaggerfallUnityItem item)
+        {
+            return item.IsEnchanted && !item.IsArtifact;
+            // TODO: add other restrictions??
+        }
+
+        public override int GetRepairPercentage(int luckMod)
+        {
+            int repairPercentage = Mathf.Max(Random.Range(3 + luckMod, 6 + luckMod), 2); // Can't repair below 2%;
+
+            // Adds bonus repair value amount with Charging Powder repairing more for staves and adamantium items, etc.
+            return (int)Mathf.Round(repairPercentage * GetBonusMultiplier());
+        }
+
+        public override int GetStaminaDrain(int endurMod)
+        {
+            return 2;
+        }
+
+        private float GetBonusMultiplier()
+        {
+            if (TemplateIndex == (int)Weapons.Staff)
+            {
+                if (NativeMaterialValue == 2)       // Silver Staff
+                    return 2.25f;
+                else if (NativeMaterialValue == 4)  // Dwarven Staff
+                    return 2.50f;
+                else if (NativeMaterialValue == 6)  // Adamantium Staff
+                    return 3.00f;
+                else                                // All Other Staves
+                    return 1.75f;
+            }
+            else if (TemplateIndex == (int)Weapons.Dagger)
+            {
+                if (NativeMaterialValue == 2)       // Silver Dagger
+                    return 1.50f;
+                else if (NativeMaterialValue == 4)  // Dwarven Dagger
+                    return 1.75f;
+                else if (NativeMaterialValue == 6)  // Adamantium Dagger
+                    return 2.00f;
+                else                                // All Other Daggers
+                    return 1.25f;
+            }
+            else if (NativeMaterialValue == 4)      // Dwarven Item
+                return 1.25f;
+            else if (NativeMaterialValue == 2)      // Silver Item
+                return 1.50f;
+            else if (NativeMaterialValue == 6)      // Adamantium Item
+                return 1.75f;
+            else if (TemplateIndex == (int)Jewellery.Wand)
+                return 2.50f;
+            else if (TemplateIndex == (int)Jewellery.Amulet || TemplateIndex == (int)Jewellery.Torc)
+                return 1.50f;
+            else if (TemplateIndex == (int)Jewellery.Ring)
+                return 1.25f;
+            else if (TemplateIndex == (int)MensClothing.Plain_robes || TemplateIndex == (int)WomensClothing.Plain_robes)
+                return 2.00f;
+            else if (TemplateIndex == (int)MensClothing.Priest_robes || TemplateIndex == (int)WomensClothing.Priestess_robes)
+                return 1.25f;
+
+            return 1f;
+        }
+
     }
 }
 
