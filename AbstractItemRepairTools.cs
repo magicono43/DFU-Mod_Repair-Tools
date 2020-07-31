@@ -118,8 +118,7 @@ namespace RepairTools
             LowerCondition(DurabilityLoss, playerEntity, repairItemCollection); // Damages repair tool condition.
 
             // Force inventory window update
-            DaggerfallInventoryWindow inventoryWindow = (DaggerfallInventoryWindow) DaggerfallUI.UIManager.TopWindow;
-            inventoryWindow.Refresh();
+            DaggerfallUI.Instance.InventoryWindow.Refresh();
 
             PlayAudioTrack(); // Plays the appropriate sound effect for a specific repair tool.
             playerEntity.DecreaseFatigue(staminaDrainValue, true); // Reduce player current stamina value from the action of repairing.
