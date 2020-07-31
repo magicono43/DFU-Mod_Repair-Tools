@@ -11,6 +11,7 @@
 using UnityEngine;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.Serialization;
+using DaggerfallConnect;
 
 namespace RepairTools
 {
@@ -39,9 +40,9 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !(item.IsEnchanted || item.ItemGroup == ItemGroups.Artifacts) &&
-                (item.GetWeaponSkillIDAsShort() == 28 || item.GetWeaponSkillIDAsShort() == 29 || item.GetWeaponSkillIDAsShort() == 31) &&
-                !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7);
+            DFCareer.Skills skill = item.GetWeaponSkillID();
+            return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
+                (skill == DFCareer.Skills.ShortBlade || skill == DFCareer.Skills.LongBlade || skill == DFCareer.Skills.Axe);
         }
 
         public override int GetRepairPercentage(int luckMod)
@@ -80,8 +81,9 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !(item.ItemGroup == ItemGroups.Weapons || item.IsEnchanted || item.ItemGroup == ItemGroups.Artifacts) &&
-                ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) || item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing);
+            return !item.IsEnchanted && !item.IsArtifact &&
+                ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) ||
+                item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing);
         }
 
         public override int GetRepairPercentage(int luckMod)
@@ -120,12 +122,7 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !(item.ItemGroup == ItemGroups.Weapons || item.IsEnchanted || item.ItemGroup == ItemGroups.Artifacts) &&
-                (item.ItemGroup == ItemGroups.Armor) &&
-                !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) &&
-                !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2) &&
-                !(item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) &&
-                !(item.TemplateIndex <= 519 && item.TemplateIndex >= 513);
+            return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Iron;
         }
 
         public override int GetRepairPercentage(int luckMod)
@@ -164,9 +161,9 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !(item.IsEnchanted || item.ItemGroup == ItemGroups.Artifacts) &&
-                (item.GetWeaponSkillIDAsShort() == 28 || item.GetWeaponSkillIDAsShort() == 29 || item.GetWeaponSkillIDAsShort() == 31) &&
-                !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7);
+            // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
+            return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor &&
+                item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain && item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100;
         }
 
         public override int GetRepairPercentage(int luckMod)
@@ -205,10 +202,9 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !(item.ItemGroup == ItemGroups.Weapons || item.IsEnchanted || item.ItemGroup == ItemGroups.Artifacts) &&
-                (item.ItemGroup == ItemGroups.Armor) &&
-                (item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain || item.NativeMaterialValue == (int)ArmorMaterialTypes.Chain2 || (item.TemplateIndex <= 519 && item.TemplateIndex >= 515)) &&
-                !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23);
+            DFCareer.Skills skill = item.GetWeaponSkillID();
+            return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
+                (skill == DFCareer.Skills.BluntWeapon || skill == DFCareer.Skills.Archery);
         }
 
         public override int GetRepairPercentage(int luckMod)
@@ -247,11 +243,8 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return (item.IsEnchanted &&
-                item.ItemGroup != ItemGroups.Artifacts &&
-                !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7 || item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) &&
-                !(item.TemplateIndex <= 519 && item.TemplateIndex >= 515 &&
-                (int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23));
+            return item.IsEnchanted && !item.IsArtifact;
+            // TODO: add other restrictions??
         }
 
         public override int GetRepairPercentage(int luckMod)
@@ -259,52 +252,58 @@ namespace RepairTools
             int repairPercentage = Mathf.Max(Random.Range(3 + luckMod, 6 + luckMod), 2); // Can't repair below 2%;
 
             // Adds bonus repair value amount with Charging Powder repairing more for staves and adamantium items, etc.
-            if (TemplateIndex == (int)Weapons.Staff)
-            {
-                if (NativeMaterialValue == 2)                    // Silver Staff
-                    return (int)Mathf.Round(repairPercentage * 2.25f);
-                else if (NativeMaterialValue == 4)               // Dwarven Staff
-                    return (int)Mathf.Round(repairPercentage * 2.50f);
-                else if (NativeMaterialValue == 6)               // Adamantium Staff
-                    return (int)Mathf.Round(repairPercentage * 3.00f);
-                else                                                  // All Other Staves
-                    return (int)Mathf.Round(repairPercentage * 1.75f);
-            }
-            else if (TemplateIndex == (int)Weapons.Dagger)
-            {
-                if (NativeMaterialValue == 2)                    // Silver Dagger
-                    return (int)Mathf.Round(repairPercentage * 1.50f);
-                else if (NativeMaterialValue == 4)               // Dwarven Dagger
-                    return (int)Mathf.Round(repairPercentage * 1.75f);
-                else if (NativeMaterialValue == 6)               // Adamantium Dagger
-                    return (int)Mathf.Round(repairPercentage * 2.00f);
-                else                                                  // All Other Daggers
-                    return (int)Mathf.Round(repairPercentage * 1.25f);
-            }
-            else if (NativeMaterialValue == 4)                   // Dwarven Item
-                return (int)Mathf.Round(repairPercentage * 1.25f);
-            else if (NativeMaterialValue == 2)                   // Silver Item
-                return (int)Mathf.Round(repairPercentage * 1.50f);
-            else if (NativeMaterialValue == 6)                   // Adamantium Item
-                return (int)Mathf.Round(repairPercentage * 1.75f);
-            else if (TemplateIndex == (int)Jewellery.Wand)
-                return (int)Mathf.Round(repairPercentage * 2.50f);
-            else if (TemplateIndex == (int)Jewellery.Amulet || TemplateIndex == (int)Jewellery.Torc)
-                return (int)Mathf.Round(repairPercentage * 1.50f);
-            else if (TemplateIndex == (int)Jewellery.Ring)
-                return (int)Mathf.Round(repairPercentage * 1.25f);
-            else if (TemplateIndex == (int)MensClothing.Plain_robes || TemplateIndex == (int)WomensClothing.Plain_robes)
-                return (int)Mathf.Round(repairPercentage * 2.00f);
-            else if (TemplateIndex == (int)MensClothing.Priest_robes || TemplateIndex == (int)WomensClothing.Priestess_robes)
-                return (int)Mathf.Round(repairPercentage * 1.25f);
-            else
-                return repairPercentage;
+            return (int)Mathf.Round(repairPercentage * GetBonusMultiplier());
         }
 
         public override int GetStaminaDrain(int endurMod)
         {
             return 2;
         }
+
+        private float GetBonusMultiplier()
+        {
+            if (TemplateIndex == (int)Weapons.Staff)
+            {
+                if (NativeMaterialValue == 2)       // Silver Staff
+                    return 2.25f;
+                else if (NativeMaterialValue == 4)  // Dwarven Staff
+                    return 2.50f;
+                else if (NativeMaterialValue == 6)  // Adamantium Staff
+                    return 3.00f;
+                else                                // All Other Staves
+                    return 1.75f;
+            }
+            else if (TemplateIndex == (int)Weapons.Dagger)
+            {
+                if (NativeMaterialValue == 2)       // Silver Dagger
+                    return 1.50f;
+                else if (NativeMaterialValue == 4)  // Dwarven Dagger
+                    return 1.75f;
+                else if (NativeMaterialValue == 6)  // Adamantium Dagger
+                    return 2.00f;
+                else                                // All Other Daggers
+                    return 1.25f;
+            }
+            else if (NativeMaterialValue == 4)      // Dwarven Item
+                return 1.25f;
+            else if (NativeMaterialValue == 2)      // Silver Item
+                return 1.50f;
+            else if (NativeMaterialValue == 6)      // Adamantium Item
+                return 1.75f;
+            else if (TemplateIndex == (int)Jewellery.Wand)
+                return 2.50f;
+            else if (TemplateIndex == (int)Jewellery.Amulet || TemplateIndex == (int)Jewellery.Torc)
+                return 1.50f;
+            else if (TemplateIndex == (int)Jewellery.Ring)
+                return 1.25f;
+            else if (TemplateIndex == (int)MensClothing.Plain_robes || TemplateIndex == (int)WomensClothing.Plain_robes)
+                return 2.00f;
+            else if (TemplateIndex == (int)MensClothing.Priest_robes || TemplateIndex == (int)WomensClothing.Priestess_robes)
+                return 1.25f;
+
+            return 1f;
+        }
+
     }
 }
 
