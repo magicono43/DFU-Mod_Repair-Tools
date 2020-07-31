@@ -17,33 +17,6 @@ using DaggerfallWorkshop.Game.UserInterfaceWindows;
 
 namespace RepairTools
 {
-    /// <summary>
-    /// Abstract class for all repair items common behaviour
-    /// </summary>
-    public abstract class AbstractItemRepairTools : DaggerfallUnityItem
-    {
-        UserInterfaceManager uiManager = DaggerfallUI.Instance.UserInterfaceManager;
-
-        public AbstractItemRepairTools(ItemGroups itemGroup, int templateIndex) : base(itemGroup, templateIndex)
-        {
-        }
-
-        public abstract uint GetItemID();
-
-        public override bool UseItem(ItemCollection collection)
-        {
-            uint ItemID = GetItemID();
-
-            if (ItemID >= 800 && ItemID <= 805)
-            {
-                DaggerfallUnityItem toolUsedObjectRef = this;
-                MethodsRepairTools RepairMethods = new MethodsRepairTools(uiManager, uiManager.TopWindow);
-                RepairMethods.UseRepairTool(collection, ItemID, toolUsedObjectRef);
-            }
-            return true;
-        }
-    }
-
     //Whetstone
     public class ItemWhetstone : AbstractItemRepairTools
     {
