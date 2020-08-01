@@ -3,10 +3,10 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		7/30/2020, 3:00 PM
+// Last Edit:		8/1/2020, 12:05 AM
 // Version:			1.00
 // Special Thanks:  Hazelnut and Ralzar
-// Modifier:
+// Modifier:		Hazelnut
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -39,7 +39,7 @@ namespace RepairTools
 
         public abstract bool IsValidForRepair(DaggerfallUnityItem item);
 
-        public abstract int GetRepairPercentage(int luckMod);
+        public abstract int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair = null);
 
         public abstract int GetStaminaDrain(int endurMod);
 
@@ -76,6 +76,8 @@ namespace RepairTools
             for (int i = 0; i < playerEntity.Items.Count; i++)
             {
                 DaggerfallUnityItem item = playerEntity.Items.GetItem(i);
+				//int percentReduce = (int)Mathf.Floor(item.maxCondition * 0.15f); // For Testing Purposes right now.
+                //item.LowerCondition(percentReduce); // For Testing Purposes right now.
                 if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && IsValidForRepair(item))
                 {
                     validRepairItems.Add(item);
@@ -92,7 +94,7 @@ namespace RepairTools
             return true;
         }
 
-        // Method to calculations and work after a list item has been selected.
+        // Method for calculations and work after a list item has been selected.
         public void RepairItem_OnItemPicked(int index, string itemName)
         {
             DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
@@ -102,13 +104,14 @@ namespace RepairTools
 
             int luckMod = (int)Mathf.Round((playerEntity.Stats.LiveLuck - 50f) / 10);
             int endurMod = (int)Mathf.Round((playerEntity.Stats.LiveEndurance - 50f) / 10);
-            int repairPercentage = GetRepairPercentage(luckMod);
+            int maxRepairThresh = (int)Mathf.Ceil(itemToRepair.maxCondition * (80 / 100f));
+            int repairPercentage = GetRepairPercentage(luckMod, itemToRepair);
             int staminaDrainValue = GetStaminaDrain(endurMod);
 
             int repairAmount = (int)Mathf.Ceil(itemToRepair.maxCondition * (repairPercentage / 100f));
-            if (itemToRepair.currentCondition + repairAmount > itemToRepair.maxCondition)
-            {   // Just set to max condition.
-                itemToRepair.currentCondition = itemToRepair.maxCondition;
+            if (itemToRepair.currentCondition + repairAmount > maxRepairThresh) // Checks if amount about to be repaired would go over the item's maximum allowed condition threshold.
+            {   // If true, repair amount will instead set the item's current condition to the defined maximum threshold.
+                itemToRepair.currentCondition = maxRepairThresh;
             }
             else
             {   // Does the actual repair, by adding condition damage to the current item's current condition value.

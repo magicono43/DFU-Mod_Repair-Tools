@@ -8,22 +8,22 @@
     "GUID": "968f2200-a351-4052-b9d5-4ee499a2b6bb",
     "Files": [
         "Assets/Game/Mods/RepairTools/Example.prefab",
-        "Assets/Game/Mods/RepairTools/ItemsRepairTools.cs",
         "Assets/Game/Mods/RepairTools/ItemTemplates.json",
-        "Assets/Game/Mods/RepairTools/MethodsRepairTools.cs",
-        "Assets/Game/Mods/RepairTools/RepairTools.cs",
-        "Assets/Game/Mods/RepairTools/RTTextTokenHolder.cs",
-        "Assets/Game/Mods/RepairTools/Audio/Charging Powder Repair 1.mp3",
-        "Assets/Game/Mods/RepairTools/Audio/Epoxy Glue Repair 1.mp3",
+        "Assets/Game/Mods/RepairTools/Scripts/AbstractItemRepairTools.cs",
+        "Assets/Game/Mods/RepairTools/Scripts/RTTextTokenHolder.cs",
+        "Assets/Game/Mods/RepairTools/Scripts/ItemsRepairTools.cs",
+        "Assets/Game/Mods/RepairTools/Scripts/RepairTools.cs",
         "Assets/Game/Mods/RepairTools/Audio/Jewelers Pliers Repair 1.mp3",
+        "Assets/Game/Mods/RepairTools/Audio/Charging Powder Repair 1.mp3",
         "Assets/Game/Mods/RepairTools/Audio/Sewing Kit Repair 1.mp3",
-        "Assets/Game/Mods/RepairTools/Audio/Armorers Hammer Repair 1.mp3",
+        "Assets/Game/Mods/RepairTools/Audio/Epoxy Glue Repair 1.mp3",
         "Assets/Game/Mods/RepairTools/Audio/Blade Sharpen WhetStone 1.mp3",
+        "Assets/Game/Mods/RepairTools/Audio/Armorers Hammer Repair 1.mp3",
         "Assets/Game/Mods/RepairTools/Textures/801_0-0.png",
         "Assets/Game/Mods/RepairTools/Textures/802_0-0.png",
+        "Assets/Game/Mods/RepairTools/Textures/803_0-0.png",
         "Assets/Game/Mods/RepairTools/Textures/804_0-0.png",
         "Assets/Game/Mods/RepairTools/Textures/800_0-0.png",
-        "Assets/Game/Mods/RepairTools/Textures/805_0-0.png",
-        "Assets/Game/Mods/RepairTools/Textures/803_0-0.png"
+        "Assets/Game/Mods/RepairTools/Textures/805_0-0.png"
     ]
 }

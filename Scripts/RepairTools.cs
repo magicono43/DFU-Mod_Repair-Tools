@@ -3,10 +3,10 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		7/30/2020, 3:00 PM
+// Last Edit:		8/1/2020, 12:05 AM
 // Version:			1.00
 // Special Thanks:  Hazelnut and Ralzar
-// Modifier:		
+// Modifier:		Hazelnut	
 
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
