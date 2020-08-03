@@ -3,8 +3,8 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		8/1/2020, 12:05 AM
-// Version:			1.00
+// Last Edit:		8/2/2020, 10:00 PM
+// Version:			1.05
 // Special Thanks:  Hazelnut and Ralzar
 // Modifier:		Hazelnut	
 
@@ -14,12 +14,14 @@ using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using UnityEngine;
 using System.Collections.Generic;
+using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 
 namespace RepairTools
 {
     public class RepairTools : MonoBehaviour
     {
         static Mod mod;
+        public static bool restrictedMaterialsCheck { get; set; }
 
         public static GameObject ExampleGo;
         public static Mod myMod;
@@ -81,16 +83,30 @@ namespace RepairTools
 
         void Awake()
         {
-            InitMod();
+            ModSettings settings = mod.GetSettings();
+            bool restrictedMaterials = settings.GetBool("Modules", "restrictedMaterials");
+
+            InitMod(restrictedMaterials);
 
             mod.IsReady = true;
         }
 
         #region InitMod and Settings
 
-        private static void InitMod()
+        private static void InitMod(bool restrictedMaterials)
         {
             Debug.Log("Begin mod init: RepairTools");
+
+            if (restrictedMaterials)
+            {
+                Debug.Log("RepairTools: Restricted Materials Module Active");
+                restrictedMaterialsCheck = true;
+            }
+            else
+            {
+                restrictedMaterialsCheck = false;
+                Debug.Log("RepairTools: Restricted Materials Module Disabled");
+            }
 
             Debug.Log("Finished mod init: RepairTools");
         }

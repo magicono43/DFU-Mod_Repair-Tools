@@ -3,8 +3,8 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		8/1/2020, 12:05 AM
-// Version:			1.00
+// Last Edit:		8/2/2020, 10:00 PM
+// Version:			1.05
 // Special Thanks:  Hazelnut and Ralzar
 // Modifier:		Hazelnut
 
@@ -41,8 +41,16 @@ namespace RepairTools
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
             DFCareer.Skills skill = item.GetWeaponSkillID();
-            return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
+
+            if (RepairTools.restrictedMaterialsCheck)
+            {
+                return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
                 (skill == DFCareer.Skills.ShortBlade || skill == DFCareer.Skills.LongBlade || skill == DFCareer.Skills.Axe);
+            }
+            else
+            {
+                return !item.IsEnchanted && !item.IsArtifact && (skill == DFCareer.Skills.ShortBlade || skill == DFCareer.Skills.LongBlade || skill == DFCareer.Skills.Axe);
+            }
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)
@@ -122,8 +130,15 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Iron &&
-                !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Ebony || item.NativeMaterialValue == (int)ArmorMaterialTypes.Orcish || item.NativeMaterialValue == (int)ArmorMaterialTypes.Daedric);
+            if (RepairTools.restrictedMaterialsCheck)
+            {
+                return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Iron &&
+                    !(item.NativeMaterialValue == (int)ArmorMaterialTypes.Ebony || item.NativeMaterialValue == (int)ArmorMaterialTypes.Orcish || item.NativeMaterialValue == (int)ArmorMaterialTypes.Daedric);
+            }
+            else
+            {
+                return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Iron;
+            }
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)
@@ -162,10 +177,20 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
-            return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor &&
-                item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain && item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100 &&
-                !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23);
+
+            if (RepairTools.restrictedMaterialsCheck)
+            {
+                // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
+                return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor &&
+                    item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain && item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100 &&
+                    !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23);
+            }
+            else
+            {
+                // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
+                return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain &&
+                    item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100;
+            }
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)
@@ -205,8 +230,16 @@ namespace RepairTools
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
             DFCareer.Skills skill = item.GetWeaponSkillID();
-            return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
-                (skill == DFCareer.Skills.BluntWeapon || skill == DFCareer.Skills.Archery);
+
+            if (RepairTools.restrictedMaterialsCheck)
+            {
+                return !item.IsEnchanted && !item.IsArtifact && item.NativeMaterialValue <= (int)WeaponMaterialTypes.Adamantium &&
+                    (skill == DFCareer.Skills.BluntWeapon || skill == DFCareer.Skills.Archery);
+            }
+            else
+            {
+                return !item.IsEnchanted && !item.IsArtifact && (skill == DFCareer.Skills.BluntWeapon || skill == DFCareer.Skills.Archery);
+            }
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)
@@ -245,8 +278,15 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return item.IsEnchanted && !item.IsArtifact && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7 || item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) &&
-                !(item.TemplateIndex <= 519 && item.TemplateIndex >= 515 && (int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23);
+            if (RepairTools.restrictedMaterialsCheck)
+            {
+                return item.IsEnchanted && !item.IsArtifact && !(item.NativeMaterialValue <= 9 && item.NativeMaterialValue >= 7 || item.NativeMaterialValue <= 521 && item.NativeMaterialValue >= 519) &&
+                    !(item.TemplateIndex <= 519 && item.TemplateIndex >= 515 && (int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23);
+            }
+            else
+            {
+                return item.IsEnchanted;
+            }
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)

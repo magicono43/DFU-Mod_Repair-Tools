@@ -1,6 +1,6 @@
 {
     "ModTitle": "RepairTools",
-    "ModVersion": "1.00",
+    "ModVersion": "1.05",
     "ModAuthor": "Kirk.O",
     "ContactInfo": "kirkoliveri@gmail.com",
     "DFUnity_Version": "0.10.25",
@@ -24,6 +24,7 @@
         "Assets/Game/Mods/RepairTools/Textures/803_0-0.png",
         "Assets/Game/Mods/RepairTools/Textures/804_0-0.png",
         "Assets/Game/Mods/RepairTools/Textures/800_0-0.png",
-        "Assets/Game/Mods/RepairTools/Textures/805_0-0.png"
+        "Assets/Game/Mods/RepairTools/Textures/805_0-0.png",
+        "Assets/Game/Mods/RepairTools/modsettings.json"
     ]
 }
