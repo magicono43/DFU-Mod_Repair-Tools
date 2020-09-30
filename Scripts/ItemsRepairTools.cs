@@ -91,7 +91,8 @@ namespace RepairTools
         {
             return !item.IsEnchanted && !item.IsArtifact &&
                 ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) ||
-                item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing);
+                item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing ||
+                item.TemplateIndex == 530); // Item Index for Climates and Calories Camping Equipment item, so can repair the tent item now pretty much.
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)

@@ -15,11 +15,19 @@ using DaggerfallWorkshop.Game.Utility.ModSupport;
 using UnityEngine;
 using System.Collections.Generic;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
+using DaggerfallWorkshop.Game.Entity;
 
 namespace RepairTools
 {
     public class RepairTools : MonoBehaviour
     {
+        static RepairTools instance;
+
+        public static RepairTools Instance
+        {
+            get { return instance ?? (instance = FindObjectOfType<RepairTools>()); }
+        }
+
         static Mod mod;
         public static bool restrictedMaterialsCheck { get; set; }
 
@@ -42,6 +50,8 @@ namespace RepairTools
 
         void Start()
         {
+            RepairToolsConsoleCommands.RegisterCommands();
+
             //get reference to mod object.  
             myMod = mod;
 
@@ -56,6 +66,7 @@ namespace RepairTools
         public static void Init(InitParams initParams)
         {
             mod = initParams.Mod;
+            instance = new GameObject("RepairTools").AddComponent<RepairTools>(); // Add script to the scene.
             var go = new GameObject("RepairTools");
             go.AddComponent<RepairTools>();
 
@@ -109,6 +120,58 @@ namespace RepairTools
             }
 
             Debug.Log("Finished mod init: RepairTools");
+        }
+
+        #endregion
+
+        #region Console Command Specific Methods
+
+        public static void DamageEquipmentCommand()
+        {
+            PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
+
+            for (int i = 0; i < playerEntity.Items.Count; i++)
+            {
+                DaggerfallUnityItem item = playerEntity.Items.GetItem(i);
+                int percentReduce = (int)Mathf.Ceil(item.maxCondition * 0.10f);
+                item.LowerCondition(percentReduce);
+            }
+        }
+
+        public static void RepairEquipmentCommand()
+        {
+            PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
+
+            for (int i = 0; i < playerEntity.Items.Count; i++)
+            {
+                DaggerfallUnityItem item = playerEntity.Items.GetItem(i);
+
+                int percentIncrease = (int)Mathf.Ceil(item.maxCondition * 0.10f);
+                int repairAmount = (int)Mathf.Ceil(item.maxCondition * (percentIncrease / 100f));
+                if (item.currentCondition + repairAmount > item.maxCondition) // Checks if amount about to be repaired would go over the item's maximum allowed condition threshold.
+                {   // If true, repair amount will instead set the item's current condition to the defined maximum threshold.
+                    item.currentCondition = item.maxCondition;
+                }
+                else
+                {   // Does the actual repair, by adding condition damage to the current item's current condition value.
+                    item.currentCondition += repairAmount;
+                }
+            }
+        }
+
+        public static void EmptyInventoryCommand() // Does not work flawlessly, requires a few runs of the command it seems, but at least it's something I suppose.
+        {
+            PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
+            ItemCollection itemCollection = playerEntity.Items;
+
+            for (int i = 0; i < playerEntity.Items.Count; i++)
+            {
+                DaggerfallUnityItem item = playerEntity.Items.GetItem(i);
+                itemCollection.RemoveItem(item);
+            }
+
+            // Force inventory window update
+            DaggerfallUI.Instance.InventoryWindow.Refresh();
         }
 
         #endregion
