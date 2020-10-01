@@ -78,7 +78,7 @@ namespace RepairTools
                 DaggerfallUnityItem item = playerEntity.Items.GetItem(i);
 				//int percentReduce = (int)Mathf.Floor(item.maxCondition * 0.15f); // For Testing Purposes right now.
                 //item.LowerCondition(percentReduce); // For Testing Purposes right now.
-                if (item.ConditionPercentage < 80 && item.ConditionPercentage > 0 && IsValidForRepair(item))
+                if (item.ConditionPercentage < 80 && IsValidForRepair(item))
                 {
                     validRepairItems.Add(item);
                     string validItemName = item.ConditionPercentage + "%" + "      " + item.LongName;
@@ -102,40 +102,61 @@ namespace RepairTools
             PlayerEntity playerEntity = GameManager.Instance.PlayerEntity;
             DaggerfallUnityItem itemToRepair = validRepairItems[index]; // Gets the item object associated with what was selected in the list window.
 
-            int luckMod = (int)Mathf.Round((playerEntity.Stats.LiveLuck - 50f) / 10);
-            int endurMod = (int)Mathf.Round((playerEntity.Stats.LiveEndurance - 50f) / 10);
-            int maxRepairThresh = (int)Mathf.Ceil(itemToRepair.maxCondition * (80 / 100f));
-            int repairPercentage = GetRepairPercentage(luckMod, itemToRepair);
-            int staminaDrainValue = GetStaminaDrain(endurMod);
-
-            int repairAmount = (int)Mathf.Ceil(itemToRepair.maxCondition * (repairPercentage / 100f));
-            if (itemToRepair.currentCondition + repairAmount > maxRepairThresh) // Checks if amount about to be repaired would go over the item's maximum allowed condition threshold.
-            {   // If true, repair amount will instead set the item's current condition to the defined maximum threshold.
-                itemToRepair.currentCondition = maxRepairThresh;
+            if (itemToRepair.currentCondition <= 0)
+            {
+                ShowCustomTextBox(false, itemToRepair, true); // Shows the specific text-box when trying to repair a completely broken item.
             }
             else
-            {   // Does the actual repair, by adding condition damage to the current item's current condition value.
-                itemToRepair.currentCondition += repairAmount;
+            {
+                int luckMod = (int)Mathf.Round((playerEntity.Stats.LiveLuck - 50f) / 10);
+                int endurMod = (int)Mathf.Round((playerEntity.Stats.LiveEndurance - 50f) / 10);
+                int maxRepairThresh = (int)Mathf.Ceil(itemToRepair.maxCondition * (80 / 100f));
+                int repairPercentage = GetRepairPercentage(luckMod, itemToRepair);
+                int staminaDrainValue = GetStaminaDrain(endurMod);
+
+                int repairAmount = (int)Mathf.Ceil(itemToRepair.maxCondition * (repairPercentage / 100f));
+                if (itemToRepair.currentCondition + repairAmount > maxRepairThresh) // Checks if amount about to be repaired would go over the item's maximum allowed condition threshold.
+                {   // If true, repair amount will instead set the item's current condition to the defined maximum threshold.
+                    itemToRepair.currentCondition = maxRepairThresh;
+                }
+                else
+                {   // Does the actual repair, by adding condition damage to the current item's current condition value.
+                    itemToRepair.currentCondition += repairAmount;
+                }
+                bool toolBroke = currentCondition <= DurabilityLoss;
+                LowerCondition(DurabilityLoss, playerEntity, repairItemCollection); // Damages repair tool condition.
+
+                // Force inventory window update
+                DaggerfallUI.Instance.InventoryWindow.Refresh();
+
+                PlayAudioTrack(); // Plays the appropriate sound effect for a specific repair tool.
+                playerEntity.DecreaseFatigue(staminaDrainValue, true); // Reduce player current stamina value from the action of repairing.
+                ShowCustomTextBox(toolBroke, itemToRepair, false); // Shows the specific text-box after repairing an item.
             }
-            bool toolBroke = currentCondition <= DurabilityLoss;
-            LowerCondition(DurabilityLoss, playerEntity, repairItemCollection); // Damages repair tool condition.
-
-            // Force inventory window update
-            DaggerfallUI.Instance.InventoryWindow.Refresh();
-
-            PlayAudioTrack(); // Plays the appropriate sound effect for a specific repair tool.
-            playerEntity.DecreaseFatigue(staminaDrainValue, true); // Reduce player current stamina value from the action of repairing.
-            ShowCustomTextBox(toolBroke, itemToRepair); // Shows the specific text-box after repairing an item.
         }
 
         // Creates the custom text-box after repairing an item.
-        public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToRepair)
+        public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToRepair, bool cantRepair)
         {
-            TextFile.Token[] tokens = RTTextTokenHolder.ItemRepairTextTokens(GetItemID(), toolBroke, itemToRepair);
-            DaggerfallMessageBox itemRepairedText = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
-            itemRepairedText.SetTextTokens(tokens);
-            itemRepairedText.ClickAnywhereToClose = true;
-            uiManager.PushWindow(itemRepairedText);
+            if (cantRepair)
+            {
+                TextFile.Token[] tokens = DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                            TextFile.Formatting.JustifyCenter,
+                            "This " + itemToRepair.LongName + " is damaged beyond your abilities.",
+                            "You would be best to seek the skills of a professional at this point.");
+                DaggerfallMessageBox itemTooDamagedText = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+                itemTooDamagedText.SetTextTokens(tokens);
+                itemTooDamagedText.ClickAnywhereToClose = true;
+                uiManager.PushWindow(itemTooDamagedText);
+            }
+            else
+            {
+                TextFile.Token[] tokens = RTTextTokenHolder.ItemRepairTextTokens(GetItemID(), toolBroke, itemToRepair);
+                DaggerfallMessageBox itemRepairedText = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
+                itemRepairedText.SetTextTokens(tokens);
+                itemRepairedText.ClickAnywhereToClose = true;
+                uiManager.PushWindow(itemRepairedText);
+            }
         }
 
         // Find the appropriate audio track of the used repair tool, then plays a one-shot of it.
