@@ -62,6 +62,11 @@ namespace RepairTools
         {
             return 10 - endurMod;
         }
+
+        public override int GetTimeDrain(int speedMod, int agiliMod)
+        {
+            return 1800 - (speedMod * 100) - (agiliMod * 50);
+        }
     }
 
     //Sewing Kit
@@ -103,6 +108,11 @@ namespace RepairTools
         public override int GetStaminaDrain(int endurMod)
         {
             return 4;
+        }
+
+        public override int GetTimeDrain(int speedMod, int agiliMod)
+        {
+            return 1800 - (speedMod * 70) - (agiliMod * 80);
         }
     }
 
@@ -150,6 +160,11 @@ namespace RepairTools
         public override int GetStaminaDrain(int endurMod)
         {
             return 14 - endurMod;
+        }
+
+        public override int GetTimeDrain(int speedMod, int agiliMod)
+        {
+            return 1800 - (speedMod * 50) - (agiliMod * 30);
         }
     }
 
@@ -203,6 +218,11 @@ namespace RepairTools
         {
             return 11 - endurMod;
         }
+
+        public override int GetTimeDrain(int speedMod, int agiliMod)
+        {
+            return 1800 - (speedMod * 60) - (agiliMod * 50);
+        }
     }
 
     //Epoxy Glue
@@ -251,6 +271,11 @@ namespace RepairTools
         public override int GetStaminaDrain(int endurMod)
         {
             return 12 - endurMod;
+        }
+
+        public override int GetTimeDrain(int speedMod, int agiliMod)
+        {
+            return 1800 - (speedMod * 40) - (agiliMod * 20);
         }
     }
 
@@ -301,6 +326,11 @@ namespace RepairTools
         public override int GetStaminaDrain(int endurMod)
         {
             return 4;
+        }
+
+        public override int GetTimeDrain(int speedMod, int agiliMod)
+        {
+            return 1200 - (speedMod * 20) - (agiliMod * 10);
         }
 
         private float GetBonusMultiplier(DaggerfallUnityItem item)

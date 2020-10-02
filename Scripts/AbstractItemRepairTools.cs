@@ -43,6 +43,8 @@ namespace RepairTools
 
         public abstract int GetStaminaDrain(int endurMod);
 
+        public abstract int GetTimeDrain(int speedMod, int agiliMod);
+
         public int GetAudioClipNum()
         {
             // Clip = 800 - itemId  (may need changing if that assumption becomes invalid)
@@ -110,9 +112,12 @@ namespace RepairTools
             {
                 int luckMod = (int)Mathf.Round((playerEntity.Stats.LiveLuck - 50f) / 10);
                 int endurMod = (int)Mathf.Round((playerEntity.Stats.LiveEndurance - 50f) / 10);
+                int speedMod = (int)Mathf.Round((playerEntity.Stats.LiveSpeed - 50f) / 10);
+                int agiliMod = (int)Mathf.Round((playerEntity.Stats.LiveAgility - 50f) / 10);
                 int maxRepairThresh = (int)Mathf.Ceil(itemToRepair.maxCondition * (80 / 100f));
                 int repairPercentage = GetRepairPercentage(luckMod, itemToRepair);
                 int staminaDrainValue = GetStaminaDrain(endurMod);
+                int TimeDrainValue = GetTimeDrain(speedMod, agiliMod);
 
                 int repairAmount = (int)Mathf.Ceil(itemToRepair.maxCondition * (repairPercentage / 100f));
                 if (itemToRepair.currentCondition + repairAmount > maxRepairThresh) // Checks if amount about to be repaired would go over the item's maximum allowed condition threshold.
@@ -131,6 +136,7 @@ namespace RepairTools
 
                 PlayAudioTrack(); // Plays the appropriate sound effect for a specific repair tool.
                 playerEntity.DecreaseFatigue(staminaDrainValue, true); // Reduce player current stamina value from the action of repairing.
+                DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(TimeDrainValue); // Forwards time by an amount of minutes in-game time.
                 ShowCustomTextBox(toolBroke, itemToRepair, false); // Shows the specific text-box after repairing an item.
             }
         }
