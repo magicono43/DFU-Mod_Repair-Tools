@@ -94,10 +94,28 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-            return !item.IsEnchanted && !item.IsArtifact &&
-                ((item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue == (int)ArmorMaterialTypes.Leather) ||
-                item.ItemGroup == ItemGroups.MensClothing || item.ItemGroup == ItemGroups.WomensClothing ||
-                item.TemplateIndex == 530); // Item Index for Climates and Calories Camping Equipment item, so can repair the tent item now pretty much.
+            if (RepairTools.restrictedMaterialsCheck)
+            {
+                // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
+                return !item.IsEnchanted && !item.IsArtifact
+                    && (item.ItemGroup == ItemGroups.Armor
+                        && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Leather
+                        && item.NativeMaterialValue <= (int)ArmorMaterialTypes.Adamantium - 0x200
+                    || item.ItemGroup == ItemGroups.MensClothing
+                    || item.ItemGroup == ItemGroups.WomensClothing
+                    || item.TemplateIndex == 530);
+            }
+            else
+            {
+                // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
+                return !item.IsEnchanted && !item.IsArtifact
+                    && (item.ItemGroup == ItemGroups.Armor
+                        && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Leather
+                        && item.NativeMaterialValue <= (int)ArmorMaterialTypes.Daedric - 0x200
+                    || item.ItemGroup == ItemGroups.MensClothing
+                    || item.ItemGroup == ItemGroups.WomensClothing
+                    || item.TemplateIndex == 530);
+            }
         }
 
         public override int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair)
@@ -193,19 +211,17 @@ namespace RepairTools
 
         public override bool IsValidForRepair(DaggerfallUnityItem item)
         {
-
             if (RepairTools.restrictedMaterialsCheck)
             {
                 // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
                 return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor &&
-                    item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain && item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100 &&
-                    !((int)item.dyeColor == 25 || (int)item.dyeColor == 24 || (int)item.dyeColor == 23);
+                    item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain && item.NativeMaterialValue <= (int)ArmorMaterialTypes.Adamantium - 0x100;
             }
             else
             {
                 // This is using knowledge of the R&R:Items internals and may break if that mod ever changes.
                 return !item.IsEnchanted && !item.IsArtifact && item.ItemGroup == ItemGroups.Armor && item.NativeMaterialValue >= (int)ArmorMaterialTypes.Chain &&
-                    item.NativeMaterialValue < (int)ArmorMaterialTypes.Adamantium - 100;
+                    item.NativeMaterialValue <= (int)ArmorMaterialTypes.Daedric - 0x100;
             }
         }
 
