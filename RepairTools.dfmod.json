@@ -1,9 +1,9 @@
 {
     "ModTitle": "RepairTools",
-    "ModVersion": "1.09",
+    "ModVersion": "1.10",
     "ModAuthor": "Kirk.O",
     "ContactInfo": "kirkoliveri@gmail.com",
-    "DFUnity_Version": "0.11.1",
+    "DFUnity_Version": "0.13.2",
     "ModDescription": "Adds Repair Items To Fix Item Condition In The Field",
     "GUID": "968f2200-a351-4052-b9d5-4ee499a2b6bb",
     "Files": [
