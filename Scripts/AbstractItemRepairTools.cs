@@ -1,13 +1,3 @@
-// Project:         RepairTools mod for Daggerfall Unity (http://www.dfworkshop.net)
-// Copyright:       Copyright (C) 2020 Kirk.O
-// License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
-// Author:          Kirk.O
-// Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		8/1/2020, 12:05 AM
-// Version:			1.00
-// Special Thanks:  Hazelnut and Ralzar
-// Modifier:		Hazelnut
-
 using System.Collections.Generic;
 using UnityEngine;
 using DaggerfallConnect.Arena2;
@@ -37,6 +27,8 @@ namespace RepairTools
 
         public abstract int DurabilityLoss { get; }
 
+        public abstract int GetAudioClipNum { get; }
+
         public abstract bool IsValidForRepair(DaggerfallUnityItem item);
 
         public abstract int GetRepairPercentage(int luckMod, DaggerfallUnityItem itemToRepair = null);
@@ -44,12 +36,6 @@ namespace RepairTools
         public abstract int GetStaminaDrain(int endurMod);
 
         public abstract int GetTimeDrain(int speedMod, int agiliMod);
-
-        public int GetAudioClipNum()
-        {
-            // Clip = 800 - itemId  (may need changing if that assumption becomes invalid)
-            return (int) GetItemID() - ItemWhetstone.templateIndex;
-        }
 
         // Depending on which Repair Tool was used, creates the appropriate list of items to display and be picked from.
         public override bool UseItem(ItemCollection collection)
@@ -80,6 +66,8 @@ namespace RepairTools
                 DaggerfallUnityItem item = playerEntity.Items.GetItem(i);
 				//int percentReduce = (int)Mathf.Floor(item.maxCondition * 0.15f); // For Testing Purposes right now.
                 //item.LowerCondition(percentReduce); // For Testing Purposes right now.
+                if (RepairToolsMain.FilterOutBrokenItemsCheck && (item.currentCondition <= 0 || item.ConditionPercentage <= 0)) { continue; }
+
                 if (item.ConditionPercentage < 80 && IsValidForRepair(item))
                 {
                     validRepairItems.Add(item);
@@ -106,7 +94,7 @@ namespace RepairTools
 
             if (itemToRepair.currentCondition <= 0)
             {
-                ShowCustomTextBox(false, itemToRepair, true); // Shows the specific text-box when trying to repair a completely broken item.
+                ShowCustomTextBox(false, itemToRepair, true, false); // Shows the specific text-box when trying to repair a completely broken item.
             }
             else
             {
@@ -129,6 +117,7 @@ namespace RepairTools
                     itemToRepair.currentCondition += repairAmount;
                 }
                 bool toolBroke = currentCondition <= DurabilityLoss;
+                bool useAltText = ShouldUseAlternateText(itemToRepair.TemplateIndex);
                 LowerConditionWorkaround(DurabilityLoss, playerEntity, repairItemCollection); // Damages repair tool condition.
 
                 // Force inventory window update
@@ -136,9 +125,17 @@ namespace RepairTools
 
                 PlayAudioTrack(); // Plays the appropriate sound effect for a specific repair tool.
                 playerEntity.DecreaseFatigue(staminaDrainValue, true); // Reduce player current stamina value from the action of repairing.
-                DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(TimeDrainValue); // Forwards time by an amount of minutes in-game time.
-                ShowCustomTextBox(toolBroke, itemToRepair, false); // Shows the specific text-box after repairing an item.
+                if (RepairToolsMain.TimeCostSettingCheck) { DaggerfallUnity.Instance.WorldTime.Now.RaiseTime(TimeDrainValue); } // Forwards time by an amount of minutes in-game time.
+                ShowCustomTextBox(toolBroke, itemToRepair, false, useAltText); // Shows the specific text-box after repairing an item.
             }
+        }
+
+        // Simple check used to determine if an alternate text string should be used to more accurately describe what item is being repaired, in some cases.
+        public bool ShouldUseAlternateText(int templateIndex)
+        {
+            if (templateIndex == (int)Books.Book0 || (templateIndex >= 551 && templateIndex <= 553)) { return true; }
+            else if ((templateIndex >= 133 && templateIndex <= 139) || (templateIndex >= 4700 && templateIndex <= 4707)) { return true; }
+            else { return false; }
         }
 
         // Like DaggerfallUnityItem's LowerCondition, but without taking DaggerfallUnity.Settings.AllowMagicRepairs into account
@@ -154,7 +151,7 @@ namespace RepairTools
         }
 
         // Creates the custom text-box after repairing an item.
-        public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToRepair, bool cantRepair)
+        public void ShowCustomTextBox(bool toolBroke, DaggerfallUnityItem itemToRepair, bool cantRepair, bool useAltText)
         {
             if (cantRepair)
             {
@@ -169,7 +166,7 @@ namespace RepairTools
             }
             else
             {
-                TextFile.Token[] tokens = RTTextTokenHolder.ItemRepairTextTokens(GetItemID(), toolBroke, itemToRepair);
+                TextFile.Token[] tokens = RTTextTokenHolder.ItemRepairTextTokens(GetItemID(), toolBroke, useAltText, itemToRepair);
                 DaggerfallMessageBox itemRepairedText = new DaggerfallMessageBox(DaggerfallUI.UIManager, DaggerfallUI.UIManager.TopWindow);
                 itemRepairedText.SetTextTokens(tokens);
                 itemRepairedText.ClickAnywhereToClose = true;
@@ -180,8 +177,13 @@ namespace RepairTools
         // Find the appropriate audio track of the used repair tool, then plays a one-shot of it.
         public void PlayAudioTrack()
         {
-            AudioClip clip = RepairTools.myMod.GetAsset<AudioClip>(RepairTools.audioClips[GetAudioClipNum()]);
-            RepairTools.audioSource.PlayOneShot(clip);
+            DaggerfallAudioSource dfAudioSource = RepairToolsMain.Instance.dfAudioSource;
+            AudioClip clip = RepairToolsMain.repairToolClips[GetAudioClipNum];
+
+            if (dfAudioSource != null && !dfAudioSource.IsPlaying()) // Meant to keep repair sounds from overlapping each other.
+            {
+                dfAudioSource.AudioSource.PlayOneShot(clip, RepairToolsMain.SoundClipVolume);
+            }
         }
 
     }

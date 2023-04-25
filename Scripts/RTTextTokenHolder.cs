@@ -1,13 +1,3 @@
-// Project:         RepairTools mod for Daggerfall Unity (http://www.dfworkshop.net)
-// Copyright:       Copyright (C) 2020 Kirk.O
-// License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
-// Author:          Kirk.O
-// Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		8/1/2020, 12:05 AM
-// Version:			1.00
-// Special Thanks:  Hazelnut and Ralzar
-// Modifier:		Hazelnut
-
 using DaggerfallWorkshop;
 using DaggerfallConnect.Arena2;
 using DaggerfallWorkshop.Game.Items;
@@ -16,7 +6,7 @@ namespace RepairTools
 {
     public class RTTextTokenHolder
     {
-        public static TextFile.Token[] ItemRepairTextTokens(uint tokenID, bool toolBroke, DaggerfallUnityItem itemRepaired)
+        public static TextFile.Token[] ItemRepairTextTokens(uint tokenID, bool toolBroke, bool useAltText, DaggerfallUnityItem itemRepaired)
         {
             if (toolBroke)
             {
@@ -44,19 +34,43 @@ namespace RepairTools
                             "The Armorers Hammer handle snaps near the sledge, useless now,",
                             "you toss it to your side.");
                     case 803:
-                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
-                            TextFile.Formatting.JustifyCenter,
-                            "You bend together broken links and close gaps in your " + itemRepaired.LongName + ".",
-                            "",
-                            "The Jewelers Pliers break off at the pivot point, useless now,",
-                            "you discard them");
+                        if (useAltText)
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You carefully bend your " + itemRepaired.LongName + " to its original shape.",
+                                "",
+                                "The Jewelers Pliers break off at the pivot point, useless now,",
+                                "you discard them");
+                        }
+                        else
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You bend together broken links and close gaps in your " + itemRepaired.LongName + ".",
+                                "",
+                                "The Jewelers Pliers break off at the pivot point, useless now,",
+                                "you discard them");
+                        }
                     case 804:
-                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
-                            TextFile.Formatting.JustifyCenter,
-                            "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.",
-                            "",
-                            "The Epoxy Glue bottle has run out of liquid,",
-                            "you throw the empty container away.");
+                        if (useAltText)
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You glue together torn pages and reinforce " + itemRepaired.LongName + "'s worn spine.",
+                                "",
+                                "The Epoxy Glue bottle has run out of liquid,",
+                                "you throw the empty container away.");
+                        }
+                        else
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.",
+                                "",
+                                "The Epoxy Glue bottle has run out of liquid,",
+                                "you throw the empty container away.");
+                        }
                     case 805:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,
@@ -87,13 +101,31 @@ namespace RepairTools
                             TextFile.Formatting.JustifyCenter,
                             "You flatten and reshape dings and dents in your " + itemRepaired.LongName + ".");
                     case 803:
-                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
-                            TextFile.Formatting.JustifyCenter,
-                            "You bend together broken links and close gaps in your " + itemRepaired.LongName + ".");
+                        if (useAltText)
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You carefully bend your " + itemRepaired.LongName + " to its original shape.");
+                        }
+                        else
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You bend together broken links and close gaps in your " + itemRepaired.LongName + ".");
+                        }
                     case 804:
-                        return DaggerfallUnity.Instance.TextProvider.CreateTokens(
-                            TextFile.Formatting.JustifyCenter,
-                            "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.");
+                        if (useAltText)
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You glue together torn pages and reinforce " + itemRepaired.LongName + "'s worn spine.");
+                        }
+                        else
+                        {
+                            return DaggerfallUnity.Instance.TextProvider.CreateTokens(
+                                TextFile.Formatting.JustifyCenter,
+                                "You glue and reinforce splits and cracks in your " + itemRepaired.LongName + "'s frame.");
+                        }
                     case 805:
                         return DaggerfallUnity.Instance.TextProvider.CreateTokens(
                             TextFile.Formatting.JustifyCenter,

@@ -2,16 +2,39 @@
     "Version": "1.0",
     "Sections": [
         {
-            "Name": "Modules",
+            "Name": "GraphicsSettings",
             "Description": "Enable or disable the optional modules contained in this mod",
             "IsAdvanced": false,
             "Keys": [
                 {
-                    "Value": true,
-                    "Name": "restrictedMaterials",
-                    "Description": "For disallowing Artifacts, Ebony, Orcish, and Daedric items to be repaired. || Default = True",
+                    "Value": false,
+                    "Name": "RestrictedMaterials",
+                    "Description": "For disallowing Artifacts, Ebony, Orcish, and Daedric items to be repaired. || Default = False",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "TimeCostToggle",
+                    "Description": "If There Is A Time 'Cost' When Repairing Something || Default = True",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": false,
+                    "Name": "FilterBrokenItemsList",
+                    "Description": "If The List For Repairing Items Filters Out Completely Broken Items, I.E. 0% Condition || Default = False",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Min": 0.0,
+                    "Max": 1.5,
+                    "Value": 1.0,
+                    "Name": "ClipVolume",
+                    "Description": "Volume That Repair Tool Sounds Will Play",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderFloatKey"
                 }
             ],
             "$version": "v1"
