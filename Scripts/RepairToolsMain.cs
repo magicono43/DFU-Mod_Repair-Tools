@@ -3,9 +3,9 @@
 // License:         MIT License (http://www.opensource.org/licenses/mit-license.php)
 // Author:          Kirk.O
 // Created On: 	    6/27/2020, 4:00 PM
-// Last Edit:		4/25/2023, 7:00 PM
-// Version:			1.15
-// Special Thanks:  Hazelnut, Ralzar, and Kab
+// Last Edit:		11/3/2024, 7:00 PM
+// Version:			1.16
+// Special Thanks:  Hazelnut, Ralzar, Kab, Sam The Salmon, and WilhelmBlack
 // Modifier:		Hazelnut, and Kab
 
 using DaggerfallWorkshop;
